@@ -8,7 +8,9 @@
         <module>eureka-server-7001</module>
         <module>eureka-server-7002</module>
         <module>eureka-server-7003</module>
-        <module>provider-server</module>
+        <module>provider-server-8001</module>
+        <module>provider-server-8002</module>
+        <module>provider-server-8003</module>
     </modules>
 
 <!--    <parent>-->
@@ -56,11 +58,19 @@
     </distributionManagement>
 
     <build>
+        <finalName>spring-cloud-example</finalName>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+                <filtering>true</filtering>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
                 <configuration>
+                    <encoding>UTF-8</encoding>
                     <source>${maven.compiler.source}</source>
                     <target>${maven.compiler.target}</target>
                 </configuration>
