@@ -11,6 +11,7 @@
         <module>provider-server-8001</module>
         <module>provider-server-8002</module>
         <module>provider-server-8003</module>
+        <module>consumer-ribbon-6001</module>
     </modules>
 
 <!--    <parent>-->
