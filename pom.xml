@@ -12,6 +12,8 @@
         <module>provider-server-8002</module>
         <module>provider-server-8003</module>
         <module>consumer-ribbon-6001</module>
+        <module>consumer-feign-6002</module>
+        <module>service-api</module>
     </modules>
 
 <!--    <parent>-->

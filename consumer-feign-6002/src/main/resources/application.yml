@@ -1,0 +1,23 @@
+spring:
+  application:
+    name: consumer-feign
+
+server:
+  port: 6002
+
+eureka:
+  instance:
+    instance-id: ${spring.cloud.client.ip-address}:${server.port} #euraka实例列表中显示的id
+    prefer-ip-address: true
+  client:
+    service-url:
+      defaultZone: http://eureka-server-7001.com:7001/eureka/,http://eureka-server-7002.com:7002/eureka/,http://eureka-server-7003.com:7003/eureka/
+
+feign:
+  hystrix:
+    enabled: true
+
+info:
+  app.name: ${spring.application.name}
+  build.artifactId: ${project.artifactId}
+  build.version: ${project.version}
