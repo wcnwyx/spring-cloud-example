@@ -1,4 +1,4 @@
-package com.wcnwyx.springcloud.example.feign;
+package com.wcnwyx.springcloud.example.api;
 
 import feign.hystrix.FallbackFactory;
 import org.springframework.stereotype.Component;

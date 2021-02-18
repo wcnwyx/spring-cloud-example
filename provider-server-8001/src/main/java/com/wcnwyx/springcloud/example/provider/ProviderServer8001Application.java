@@ -5,7 +5,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.cloud.netflix.eureka.EnableEurekaClient;
 
 @EnableEurekaClient
-@SpringBootApplication(scanBasePackages = {"com.wcnwyx.springcloud.example.provider"})
+@SpringBootApplication
 public class ProviderServer8001Application {
     public static void main(String[] args) {
         SpringApplication.run(ProviderServer8001Application.class, args);
