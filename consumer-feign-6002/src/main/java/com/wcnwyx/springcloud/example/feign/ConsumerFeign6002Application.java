@@ -7,7 +7,7 @@ import org.springframework.cloud.netflix.hystrix.EnableHystrix;
 import org.springframework.cloud.openfeign.EnableFeignClients;
 
 @EnableEurekaClient
-@EnableFeignClients(basePackages = {"com.wcnwyx.springcloud.example.api"})
+@EnableFeignClients//(basePackages = {"com.wcnwyx.springcloud.example.api"})
 @EnableHystrix
 @SpringBootApplication(scanBasePackages = {"com.wcnwyx.springcloud.example.feign"})
 public class ConsumerFeign6002Application {
