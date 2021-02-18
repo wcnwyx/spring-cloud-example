@@ -14,6 +14,7 @@
         <module>consumer-ribbon-6001</module>
         <module>consumer-feign-6002</module>
         <module>service-api</module>
+        <module>hystrix-dashboard-9001</module>
     </modules>
 
 <!--    <parent>-->
