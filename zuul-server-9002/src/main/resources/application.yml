@@ -17,3 +17,10 @@ info:
   app.name: ${spring.application.name}
   build.artifactId: ${project.artifactId}
   build.version: ${project.version}
+
+zuul:
+  routes:
+    ignored-services: #忽略某个服务名，如果所有的话写 '*'
+      - provider-server
+    provider.serviceId: provider-server #完整的服务名称
+    provider.path: /provider/** #映射的微服务别名
