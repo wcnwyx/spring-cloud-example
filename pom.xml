@@ -5,9 +5,9 @@
     <modelVersion>4.0.0</modelVersion>
     <packaging>pom</packaging>
     <modules>
-        <module>eureka-server-7001</module>
-        <module>eureka-server-7002</module>
-        <module>eureka-server-7003</module>
+        <module>eureka-server-cluster-7001</module>
+        <module>eureka-server-cluster-7002</module>
+        <module>eureka-server-cluster-7003</module>
         <module>provider-server-8001</module>
         <module>provider-server-8002</module>
         <module>provider-server-8003</module>
@@ -17,6 +17,7 @@
         <module>hystrix-dashboard-9001</module>
         <module>provider-server-hystrix-8004</module>
         <module>zuul-server-9002</module>
+        <module>eureka-server-single-7001</module>
     </modules>
 
 <!--    <parent>-->
