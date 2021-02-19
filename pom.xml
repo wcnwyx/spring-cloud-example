@@ -16,6 +16,7 @@
         <module>service-api</module>
         <module>hystrix-dashboard-9001</module>
         <module>provider-server-hystrix-8004</module>
+        <module>zuul-server-9002</module>
     </modules>
 
 <!--    <parent>-->
