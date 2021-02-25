@@ -41,7 +41,7 @@ public interface LeaseManager<T> {
     /**
      * Renew the {@link Lease} associated w/ the passed in <code>appName</code>
      * and <code>id</code>.
-     * 续约与传入的appName和id相关联的租约
+     * 续订与传入的appName和id相关联的租约
      *
      * @param id
      *            - unique id within appName

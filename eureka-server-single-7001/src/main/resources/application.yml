@@ -16,3 +16,7 @@ eureka:
     fetch-registry: false
     service-url:
       defaultZone: http://eureka-server-7001.com:7001/eureka/
+
+logging:
+  level:
+    root: debug

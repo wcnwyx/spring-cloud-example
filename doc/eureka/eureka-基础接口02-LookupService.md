@@ -34,7 +34,7 @@ public interface LookupService<T> {
     /**
      * Gets the next possible server to process the requests from the registry
      * information received from eureka.
-     *
+     * 根据虚拟主机名获取下一个服务实例信息（InstanceInfo）
      * <p>
      * The next server is picked on a round-robin fashion. By default, this
      * method just returns the servers that are currently with
@@ -42,9 +42,13 @@ public interface LookupService<T> {
      * This configuration can be controlled by overriding the
      * {@link com.netflix.discovery.EurekaClientConfig#shouldFilterOnlyUpInstances()}.
      *
+     * 以循环的方式获取下一个服务，该方法只返回服务当前状态是UP状态的。
+     * 可以通过EurekaClientConfig#shouldFilterOnlyUpInstances()这个配置覆盖该设置。
+     * 
      * Note that in some cases (Eureka emergency mode situation), the instances
      * that are returned may not be unreachable, it is solely up to the client
      * at that point to timeout quickly and retry the next server.
+     * 注意在一些情况下（紧急模式情况），返回的服务实例可能是无法访问的，此时完全由客户端来决定是否快速超时再获取下一个服务。
      * </p>
      *
      * @param virtualHostname
@@ -52,10 +56,6 @@ public interface LookupService<T> {
      * @param secure
      *            indicates whether this is a HTTP or a HTTPS request - secure
      *            means HTTPS.
-     * @return the {@link InstanceInfo} information which contains the public
-     *         host name of the next server in line to process the request based
-     *         on the round-robin algorithm.
-     * @throws java.lang.RuntimeException if the virtualHostname does not exist
      */
     InstanceInfo getNextServerFromEureka(String virtualHostname, boolean secure);
 }
