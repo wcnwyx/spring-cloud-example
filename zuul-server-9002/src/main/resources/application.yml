@@ -25,4 +25,5 @@ zuul:
     provider.path: /provider/** #映射的微服务别名
 
 logging:
-  level: debug
+  level:
+    root: debug

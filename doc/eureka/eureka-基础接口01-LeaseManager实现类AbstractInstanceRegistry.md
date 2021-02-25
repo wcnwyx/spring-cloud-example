@@ -44,13 +44,13 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
 
     private Timer deltaRetentionTimer = new Timer("Eureka-DeltaRetentionTimer", true);
     private Timer evictionTimer = new Timer("Eureka-EvictionTimer", true);
-    //记录上一分钟续约的请求数，用于判断是否进入自我保护模式
+    //记录上一分钟续约的请求数，用于判断是否进入自我保护模式。eureka管理界面上展示的Renews (last min)就是这个参数。
     private final MeasuredRate renewsLastMin;
 
     private final AtomicReference<EvictionTask> evictionTaskRef = new AtomicReference<EvictionTask>();
 
     protected String[] allKnownRemoteRegions = EMPTY_STR_ARRAY;
-    //每分钟续约个数阀值，用于判断是否开启保护模式
+    //每分钟续约个数阀值，用于判断是否开启保护模式。eureka管理界面上展示的Renews threshold就是这个参数。
     protected volatile int numberOfRenewsPerMinThreshold;
     protected volatile int expectedNumberOfClientsSendingRenews;
 
@@ -198,7 +198,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
             //cancel监控计数器加1
             CANCEL.increment(isReplication);
             
-            //根据appName和id查找对应的实例信息
+            //根据appName和id查找对应的实例信息并remove掉
             Map<String, Lease<InstanceInfo>> gMap = registry.get(appName);
             Lease<InstanceInfo> leaseToCancel = null;
             if (gMap != null) {
@@ -349,6 +349,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
         if (toEvict > 0) {
             logger.info("Evicting {} items (expired={}, evictionLimit={})", toEvict, expiredLeases.size(), evictionLimit);
 
+            //随机toEvict个数来进行驱逐，调用internalCancel方法。
             Random random = new Random(System.currentTimeMillis());
             for (int i = 0; i < toEvict; i++) {
                 // Pick a random item (Knuth shuffle algorithm)

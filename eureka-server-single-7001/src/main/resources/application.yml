@@ -20,3 +20,4 @@ eureka:
 logging:
   level:
     root: debug
+
