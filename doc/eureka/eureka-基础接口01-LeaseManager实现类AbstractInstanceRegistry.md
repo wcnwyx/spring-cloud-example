@@ -43,21 +43,36 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
     protected final Object lock = new Object();
 
     private Timer deltaRetentionTimer = new Timer("Eureka-DeltaRetentionTimer", true);
+    //驱逐逻辑的定时器，定时执行驱逐（evict）方法
     private Timer evictionTimer = new Timer("Eureka-EvictionTimer", true);
     //记录上一分钟续约的请求数，用于判断是否进入自我保护模式。eureka管理界面上展示的Renews (last min)就是这个参数。
     private final MeasuredRate renewsLastMin;
-
+    //驱逐逻辑的定时任务
     private final AtomicReference<EvictionTask> evictionTaskRef = new AtomicReference<EvictionTask>();
 
     protected String[] allKnownRemoteRegions = EMPTY_STR_ARRAY;
     //每分钟续约个数阀值，用于判断是否开启保护模式。eureka管理界面上展示的Renews threshold就是这个参数。
     protected volatile int numberOfRenewsPerMinThreshold;
+    //需要有多少个客户端会发续约请求，用于判断是否开启自我保护模式。
     protected volatile int expectedNumberOfClientsSendingRenews;
 
     protected final EurekaServerConfig serverConfig;
     protected final EurekaClientConfig clientConfig;
     protected final ServerCodecs serverCodecs;
     protected volatile ResponseCache responseCache;
+
+    protected void postInit() {
+        //renewsLastMin启动，记录上一分钟内续约请求数量
+        renewsLastMin.start();
+        //启动evictionTimer（定时执行驱逐方法）
+        if (evictionTaskRef.get() != null) {
+            evictionTaskRef.get().cancel();
+        }
+        evictionTaskRef.set(new EvictionTask());
+        evictionTimer.schedule(evictionTaskRef.get(),
+                serverConfig.getEvictionIntervalTimerInMs(),
+                serverConfig.getEvictionIntervalTimerInMs());
+    }
 
 
     /**
@@ -300,6 +315,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
     /**
      * Evicts everything in the instance registry that has expired, if expiry is enabled.
      * 如果启用了到期设置，驱逐所有实例注册表中到期的实例。
+     * 定时任务会定时调用
      */
     @Override
     public void evict() {
@@ -364,6 +380,46 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
                 internalCancel(appName, id, false);
             }
         }
+    }
+
+    //驱逐Task，主要看下补偿时间的概念
+    class EvictionTask extends TimerTask {
+
+        //记录着上次开始执行的时间戳
+        private final AtomicLong lastExecutionNanosRef = new AtomicLong(0l);
+
+        @Override
+        public void run() {
+            try {
+                long compensationTimeMs = getCompensationTimeMs();
+                logger.info("Running the evict task with compensationTime {}ms", compensationTimeMs);
+                evict(compensationTimeMs);
+            } catch (Throwable e) {
+                logger.error("Could not run the evict task", e);
+            }
+        }
+
+        /**
+         * compute a compensation time defined as the actual time this task was executed since the prev iteration,
+         * vs the configured amount of time for execution. This is useful for cases where changes in time (due to
+         * clock skew or gc for example) causes the actual eviction task to execute later than the desired time
+         * according to the configured cycle.
+         * 计算补偿时间。
+         * 补偿时间=Max(0,使用本次开始的时间戳-上次开始的时间戳-配置的时间间隔)
+         * 主要用于时间偏差导致的定时任务不能按照预定的周期来执行（比如说时钟偏斜或者gc消耗）
+         */
+        long getCompensationTimeMs() {
+            long currNanos = getCurrentTimeNano();
+            long lastNanos = lastExecutionNanosRef.getAndSet(currNanos);
+            if (lastNanos == 0l) {
+                return 0l;
+            }
+
+            long elapsedMs = TimeUnit.NANOSECONDS.toMillis(currNanos - lastNanos);
+            long compensationTime = elapsedMs - serverConfig.getEvictionIntervalTimerInMs();
+            return compensationTime <= 0l ? 0l : compensationTime;
+        }
+
     }
 }
 ```
