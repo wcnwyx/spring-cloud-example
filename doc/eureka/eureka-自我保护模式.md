@@ -1,5 +1,5 @@
 ##自我保护的概念
-先看一下eureka官方对这个概念的描述，在根据代码来看下。  
+先看一下eureka官方对这个概念的描述，再根据代码来看下。  
 [官方定义地址](https://github.com/Netflix/eureka/wiki/Server-Self-Preservation-Mode)
 
 > Eureka servers will enter self preservation mode if they detect that a larger than expected number of registered clients have terminated their connections in an ungraceful way, and are pending eviction at the same time. This is done to ensure catastrophic network events do not wipe out eureka registry data, and having this be propagated downstream to all clients.
@@ -62,7 +62,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
         //省略部分代码...
     }
     
-    //更新每分钟续约请求的最小阀值
+    //更新每分钟续约请求的最小阀值(register、cancle和定时器都会调用该方法)
     protected void updateRenewsPerMinThreshold() {
         //serverConfig.getExpectedClientRenewalIntervalSeconds() 这个参数是客户端每隔几秒进行一次续约，默认是30s
         //serverConfig.getRenewalPercentThreshold() 这个参数是自我保护模式启动的阀值，默认是0.85

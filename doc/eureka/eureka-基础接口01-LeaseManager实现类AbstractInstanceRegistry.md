@@ -281,8 +281,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
         } else {
             InstanceInfo instanceInfo = leaseToRenew.getHolder();
             if (instanceInfo != null) {
-                // touchASGCache(instanceInfo.getASGName());
-                //???
+                //overriddenStatus的逻辑后面再单独看
                 InstanceStatus overriddenInstanceStatus = this.getOverriddenInstanceStatus(
                         instanceInfo, leaseToRenew, isReplication);
                 if (overriddenInstanceStatus == InstanceStatus.UNKNOWN) {
