@@ -1,4 +1,4 @@
-##InstanceStatusOverrideRule接口描述：  
+##1: InstanceStatusOverrideRule接口描述：  
 这个接口主要是用在AbstractInstanceRegistry中，用于获取实例的状态信息。  
 后面通过分析具体的规则实现来理解吧。  
 ```java
@@ -31,7 +31,7 @@ public interface InstanceStatusOverrideRule {
 }
 ```
 
-###实现类AlwaysMatchInstanceStatusRule
+###1.1: 实现类AlwaysMatchInstanceStatusRule
 ```java
 /**
  * This rule matches always and returns the current status of the instance.
@@ -51,7 +51,7 @@ public class AlwaysMatchInstanceStatusRule implements InstanceStatusOverrideRule
 }
 ```
 
-##实现类FirstMatchWinsCompositeRule
+###1.2: 实现类FirstMatchWinsCompositeRule
 ```java
 /**
  * This rule takes an ordered list of rules and returns the result of the first match or the
@@ -94,7 +94,7 @@ public class FirstMatchWinsCompositeRule implements InstanceStatusOverrideRule {
 }
 ```
 
-##实现类DownOrStartingRule
+###1.3: 实现类DownOrStartingRule
 ```java
 /**
  * This rule matches if the instance is DOWN or STARTING.
@@ -115,7 +115,8 @@ public class DownOrStartingRule implements InstanceStatusOverrideRule {
         // currently in SERVICE
         //InstanceStatus总共有五个状态：UP、DOWN、STARTING、OUT_OF_SERVICE、UNKNOWN
         //如果实例的状态不是UP也不是OUT_OF_SERVICE就直接使用实例对象自身的状态。
-        //也就是说如果是UP或者OUT_OF_SERVICE就在用其它的规则匹配。
+        //也就是说如果实例状态是DOWN、STARTING、UNKNOWN就直接使用实例自身的状态。
+        //也就是说如果是UP或者OUT_OF_SERVICE就再用其它的规则匹配。
         if ((!InstanceInfo.InstanceStatus.UP.equals(instanceInfo.getStatus()))
                 && (!InstanceInfo.InstanceStatus.OUT_OF_SERVICE.equals(instanceInfo.getStatus()))) {
             logger.debug("Trusting the instance status {} from replica or instance for instance {}",
@@ -128,7 +129,7 @@ public class DownOrStartingRule implements InstanceStatusOverrideRule {
 }
 ```
 
-##实现类OverrideExistsRule
+###1.4: 实现类OverrideExistsRule
 ```java
 /**
  * This rule checks to see if we have overrides for an instance and if we do then we return those.
@@ -164,12 +165,11 @@ public class OverrideExistsRule implements InstanceStatusOverrideRule {
 
 ```
 
-##实现类LeaseExistsRule
+###1.5: 实现类LeaseExistsRule
 ```java
 /**
  * This rule matches if we have an existing lease for the instance that is UP or OUT_OF_SERVICE.
- *
- * Created by Nikos Michalakis on 7/13/16.
+ * 如果该实例已经存在一个租约，并且实例的状态为UP或者OUT_OF_SERVICE，则匹配上该规则。
  */
 public class LeaseExistsRule implements InstanceStatusOverrideRule {
 
@@ -202,3 +202,126 @@ public class LeaseExistsRule implements InstanceStatusOverrideRule {
 
 }
 ```
+
+##2: InstanceStatusOverrideRule的使用：
+
+###2.1: 初始化
+```java
+public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry implements PeerAwareInstanceRegistry {
+    @Inject
+    public PeerAwareInstanceRegistryImpl(
+            EurekaServerConfig serverConfig,
+            EurekaClientConfig clientConfig,
+            ServerCodecs serverCodecs,
+            EurekaClient eurekaClient
+    ) {
+        super(serverConfig, clientConfig, serverCodecs);
+        this.eurekaClient = eurekaClient;
+        this.numberOfReplicationsLastMin = new MeasuredRate(1000 * 60 * 1);
+        // We first check if the instance is STARTING or DOWN, then we check explicit overrides,
+        // then we check the status of a potentially existing lease.
+        // 构造函数中进行初始化，使用FirstMatchWinsCompositeRule封装了一组规则来使用
+        // 先检查实例是否是STARTING或者DOWN
+        // 再检查显示的覆盖状态
+        // 再检查已经存在的租约状态
+        // 最后如果还未匹配到，再使用FirstMatchWinsCompositeRule获取实例对象自身的状态
+        this.instanceStatusOverrideRule = new FirstMatchWinsCompositeRule(new DownOrStartingRule(),
+                new OverrideExistsRule(overriddenInstanceStatusMap), new LeaseExistsRule());
+    }
+
+    //实现父类AbstractInstanceRegistry定义的抽象方法，返回使用的规则
+    @Override
+    protected InstanceStatusOverrideRule getInstanceInfoOverrideRule() {
+        return this.instanceStatusOverrideRule;
+    }
+}
+```
+
+###2.2: 使用情况
+使用规则来获取状态的方法在register和renew中都有使用到。  
+```java
+public abstract class AbstractInstanceRegistry implements InstanceRegistry {
+    //抽象方法，子类PeerAwareInstanceRegistryImpl中实现了该方法，返回了FirstMatchWinsCompositeRule
+    protected abstract InstanceStatusOverrideRule getInstanceInfoOverrideRule();
+
+    protected InstanceInfo.InstanceStatus getOverriddenInstanceStatus(InstanceInfo r,
+                                                                      Lease<InstanceInfo> existingLease,
+                                                                      boolean isReplication) {
+        InstanceStatusOverrideRule rule = getInstanceInfoOverrideRule();
+        logger.debug("Processing override status using rule: {}", rule);
+        return rule.apply(r, existingLease, isReplication).status();
+    }
+
+    public void register(InstanceInfo registrant, int leaseDuration, boolean isReplication) {
+
+        //省略了部分代码。。。
+        
+        //此处会调用该方法来获取实例状。
+        //服务第一次上线时，会通过AlwaysMatchInstanceStatusRule获取到UP状态。
+        InstanceStatus overriddenInstanceStatus = getOverriddenInstanceStatus(registrant, existingLease, isReplication);
+        registrant.setStatusWithoutDirty(overriddenInstanceStatus);
+
+        if (InstanceStatus.UP.equals(registrant.getStatus())) {
+            lease.serviceUp();
+        }
+        registrant.setActionType(ActionType.ADDED);
+        recentlyChangedQueue.add(new RecentlyChangedItem(lease));
+        registrant.setLastUpdatedTimestamp();
+        invalidateCache(registrant.getAppName(), registrant.getVIPAddress(), registrant.getSecureVipAddress());
+        logger.info("Registered instance {}/{} with status {} (replication={})",
+                registrant.getAppName(), registrant.getId(), registrant.getStatus(), isReplication);
+    }
+
+    public boolean renew(String appName, String id, boolean isReplication) {
+        RENEW.increment(isReplication);
+        Map<String, Lease<InstanceInfo>> gMap = registry.get(appName);
+        Lease<InstanceInfo> leaseToRenew = null;
+        if (gMap != null) {
+            leaseToRenew = gMap.get(id);
+        }
+        if (leaseToRenew == null) {
+            RENEW_NOT_FOUND.increment(isReplication);
+            logger.warn("DS: Registry: lease doesn't exist, registering resource: {} - {}", appName, id);
+            return false;
+        } else {
+            InstanceInfo instanceInfo = leaseToRenew.getHolder();
+            if (instanceInfo != null) {
+                //此处也会调用获取实例的状态，
+                //正常情况下续约会通过LeaseExistsRule获取到UP状态
+                InstanceStatus overriddenInstanceStatus = this.getOverriddenInstanceStatus(
+                        instanceInfo, leaseToRenew, isReplication);
+                if (overriddenInstanceStatus == InstanceStatus.UNKNOWN) {
+                    logger.info("Instance status UNKNOWN possibly due to deleted override for instance {}"
+                            + "; re-register required", instanceInfo.getId());
+                    RENEW_NOT_FOUND.increment(isReplication);
+                    return false;
+                }
+                if (!instanceInfo.getStatus().equals(overriddenInstanceStatus)) {
+                    logger.info(
+                            "The instance status {} is different from overridden instance status {} for instance {}. "
+                                    + "Hence setting the status to overridden status", instanceInfo.getStatus().name(),
+                            instanceInfo.getOverriddenStatus().name(),
+                            instanceInfo.getId());
+                    instanceInfo.setStatusWithoutDirty(overriddenInstanceStatus);
+
+                }
+            }
+            renewsLastMin.increment();
+            leaseToRenew.renew();
+            return true;
+        }
+    }
+}
+```
+
+##总结：
+1. InstanceStatusOverrideRule是一个用来匹配实例状态的规则接口，通常使用一组规则来匹配，第一个匹配到的就使用，具体的规则有一下几个：
+   - DownOrStartingRule，如果实例的状态为DOWN 或者 STARTING，则该规则被匹配到，返回实例的状态。
+   - OverrideExistsRule，如果实例存在overriddenStatus（覆盖状态），则该规则被匹配到，返回overriddenStatus。
+   - LeaseExistsRule，如果实例有对应的租约存在，并且实例的状态为UP或者OUT_OF_SERVICE，则改规则被匹配到，返回实例的状态。
+   - AlwaysMatchInstanceStatusRule，直接返回实例对象自身的状态。
+2. FirstMatchWinsCompositeRule是一个规则组合类的规则，组合的规则及使用顺序为：DownOrStartingRule>OverrideExistsRule>LeaseExistsRule>AlwaysMatchInstanceStatusRule
+3. 通过规则的顺序我们可以推测出不通状态是通过那个规则来获取到的。
+   - DOWN、STARTING、UNKNOWN 通过DownOrStartingRule获取到
+   - OUT_OF_SERVICE 通过OverrideExistsRule或者LeaseExistsRule或者AlwaysMatchInstanceStatusRule获取到
+   - UP 通过LeaseExistsRule或者AlwaysMatchInstanceStatusRule获取到

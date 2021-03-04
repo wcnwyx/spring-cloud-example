@@ -159,15 +159,20 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
 
 ##statusUpdate设置OUT_OF_SERVICE之后有哪些影响
 通过statusUpdate方法的梳理，InstanceInfo的status和overriddenStatus都已经变成了OUT_OF_SERVICE了，所以该服务不会再有流量分配。  
-那该服务还是在运行中的，renew（续约）或者cancel(取消)操作会有什么影响呢？再看下这两个操作：  
+那该服务还是在运行中的，renew（续约）、register（注册）或者cancel(取消)操作会有什么影响呢？再看下这两个操作：  
 ```java
 public abstract class AbstractInstanceRegistry implements InstanceRegistry {
+    protected final ConcurrentMap<String, InstanceStatus> overriddenInstanceStatusMap = CacheBuilder
+            .newBuilder().initialCapacity(500)
+            .expireAfterAccess(1, TimeUnit.HOURS)
+            .<String, InstanceStatus>build().asMap();
     
     public boolean renew(String appName, String id, boolean isReplication) {
         //省略部分代码。。。
         
         if (instanceInfo != null) {
-            //这时通过OverrideExistsRule规则拿到了状态是OUT_OF_SERVICE
+            //通过statusUpdate设置了OUT_OF_SERVICE了，
+            //这时会匹配到OverrideExistsRule规则拿到了状态是OUT_OF_SERVICE
             //InstanceStatusOverrideRule这个规则的说明在其它篇章里单独说了。
             InstanceStatus overriddenInstanceStatus = this.getOverriddenInstanceStatus(
                     instanceInfo, leaseToRenew, isReplication);
@@ -198,5 +203,47 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
         return true;
     }
 
+    public void register(InstanceInfo registrant, int leaseDuration, boolean isReplication) {
+
+        //省略了部分代码。。。
+
+        //statusUpdate设置OUT_OF_SERVICE之后。
+        //情况1：
+        //服务正常下线，调用register设置为DOWN状态（匹配到DownOrStartingRule），然后再cancel，
+        //然后服务再正常上线调用register，通过AlwaysMatchInstanceStatusRule配到到状态UP。
+        //情况2：
+        //服务异常下线，未正常cancel掉数据，所以overriddenInstanceStatusMap还保持有该实例的覆盖状态。
+        //服务又再次启动来进行注册，虽然客户端发送过来的实例状态为UP，但是会匹配到OverrideExistsRule返回OUT_OF_SERVICE状态，
+        //服务启动后还是会保持OUT_OF_SERVICE状态
+        InstanceStatus overriddenInstanceStatus = getOverriddenInstanceStatus(registrant, existingLease, isReplication);
+        registrant.setStatusWithoutDirty(overriddenInstanceStatus);
+
+        if (InstanceStatus.UP.equals(registrant.getStatus())) {
+            lease.serviceUp();
+        }
+        registrant.setActionType(ActionType.ADDED);
+        recentlyChangedQueue.add(new RecentlyChangedItem(lease));
+        registrant.setLastUpdatedTimestamp();
+        invalidateCache(registrant.getAppName(), registrant.getVIPAddress(), registrant.getSecureVipAddress());
+        logger.info("Registered instance {}/{} with status {} (replication={})",
+                registrant.getAppName(), registrant.getId(), registrant.getStatus(), isReplication);
+    }
+
+    protected boolean internalCancel(String appName, String id, boolean isReplication) {
+        try {
+            //省略部分代码。。。
+            
+            //cancel是直接将实例的overriddenStatus从map中移除掉
+            InstanceStatus instanceStatus = overriddenInstanceStatusMap.remove(id);
+            if (instanceStatus != null) {
+                logger.debug("Removed instance id {} from the overridden map which has value {}", id, instanceStatus.name());
+            }
+
+            //省略部分代码。。。
+            return true;
+        } finally {
+            read.unlock();
+        }
+    }
 }
 ```
