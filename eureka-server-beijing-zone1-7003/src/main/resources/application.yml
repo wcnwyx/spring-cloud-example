@@ -1,0 +1,26 @@
+spring:
+  application:
+    name: eureka-server
+
+server:
+  port: 7003
+
+eureka:
+  instance:
+    instance-id: ${spring.cloud.client.ip-address}:${server.port} #euraka实例列表中显示的id
+    hostname: eureka-server-beijing-zone1-7003.com #eureka服务端的实例名称，DS Replicas栏显示的名称
+  client:
+    #该应用为注册中心，设置为false表示不向注册中心注册自己，集群配置是必须设置为true
+    register-with-eureka: true
+    #该应用为注册中心，设置为false表示不需要要去检索服务，集群配置是必须设置为true
+    fetch-registry: true
+    region: beijing #该服务所在的region
+    prefer-same-zone-eureka: true #是否优先和相同zone的server进行交互
+    availability-zones:
+      beijing: beijing-zone-1,beijing-zone-2 #第一个就代表自己所在的zone
+    service-url:
+      beijing-zone-1: http://eureka-server-beijing-zone1-7003.com:7003/eureka/ #同一个zone里也可以配置多个，逗号分隔即可
+      beijing-zone-2: http://eureka-server-beijing-zone2-7004.com:7004/eureka/
+  server:
+    remoteRegionUrlsWithName:
+      shanghai: http://eureka-server-shanghai-zone1-7001.com:7001/eureka/ #其它region的名称和地址映射

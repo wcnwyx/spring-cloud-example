@@ -9,7 +9,8 @@
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
-    <artifactId>eureka-server-cluster-7001</artifactId>
+    <artifactId>eureka-server-shanghai-zone2-7002</artifactId>
+
 
     <dependencies>
         <dependency>
@@ -17,5 +18,4 @@
             <artifactId>spring-cloud-starter-netflix-eureka-server</artifactId>
         </dependency>
     </dependencies>
-
 </project>
