@@ -82,6 +82,64 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
 }
 
 public class PeerAwareInstanceRegistryImpl extends AbstractInstanceRegistry implements PeerAwareInstanceRegistry {
+
+    @Override
+    public void init(PeerEurekaNodes peerEurekaNodes) throws Exception {
+        //初始化时启动更新每分钟续约请求的最小阀值的定时任务
+        scheduleRenewalThresholdUpdateTask();
+    }
+    
+    /**
+     * Schedule the task that updates <em>renewal threshold</em> periodically.
+     * The renewal threshold would be used to determine if the renewals drop
+     * dramatically because of network partition and to protect expiring too
+     * many instances at a time.
+     * 启动定时任务来更新续约的阀值
+     */
+    private void scheduleRenewalThresholdUpdateTask() {
+        timer.schedule(new TimerTask() {
+                           @Override
+                           public void run() {
+                               updateRenewalThreshold();
+                           }
+                       }, serverConfig.getRenewalThresholdUpdateIntervalMs(),
+                serverConfig.getRenewalThresholdUpdateIntervalMs());
+    }
+
+    /**
+     * Updates the <em>renewal threshold</em> based on the current number of
+     * renewals. The threshold is a percentage as specified in
+     * {@link EurekaServerConfig#getRenewalPercentThreshold()} of renewals
+     * received per minute {@link #getNumOfRenewsInLastMin()}.
+     * 重新计算当前期望发送续约请求数量参数expectedNumberOfClientsSendingRenews，然后更新每分钟续约请求的阀值
+     */
+    private void updateRenewalThreshold() {
+        try {
+            Applications apps = eurekaClient.getApplications();
+            int count = 0;
+            for (Application app : apps.getRegisteredApplications()) {
+                for (InstanceInfo instance : app.getInstances()) {
+                    if (this.isRegisterable(instance)) {
+                        ++count;
+                    }
+                }
+            }
+            synchronized (lock) {
+                // Update threshold only if the threshold is greater than the
+                // current expected threshold or if self preservation is disabled.
+                if ((count) > (serverConfig.getRenewalPercentThreshold() * expectedNumberOfClientsSendingRenews)
+                        || (!this.isSelfPreservationModeEnabled())) {
+                    this.expectedNumberOfClientsSendingRenews = count;
+                    updateRenewsPerMinThreshold();
+                }
+            }
+            logger.info("Current renewal threshold is : {}", numberOfRenewsPerMinThreshold);
+        } catch (Throwable e) {
+            logger.error("Cannot update renewal threshold", e);
+        }
+    }
+
+
     //配置文件是否开启了自我保护模式
     @Override
     public boolean isSelfPreservationModeEnabled() {
