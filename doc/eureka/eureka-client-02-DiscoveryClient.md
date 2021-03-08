@@ -40,7 +40,7 @@ DiscoveryClient大致有以下功能点：
 3. EurekaClient接口中定义的健康检查（healthcheck）相关功能。
 4. 租约管理的功能（注册、续约、取消）
 
-类代码一起看的话比较多，下面拆分几个部分分开了解。   
+这个类代码一起看的话比较多，下面拆分几个部分分开了解。   
 
 ##租约管理相关功能
 ```java
@@ -128,6 +128,250 @@ public class DiscoveryClient implements EurekaClient {
             }
         }
     }
+}
+```
+
+##应用、实例信息的获取相关
+```java
+@Singleton
+public class DiscoveryClient implements EurekaClient {
+
+    //保存本从服务端获取到的Applications数据
+    private final AtomicReference<Applications> localRegionApps = new AtomicReference<Applications>();
+
+    //一个计数器，用于防止老的线程将注册表信息更新为老的版本
+    private final AtomicLong fetchRegistryGeneration;
+
+    /**
+     * Fetches the registry information.
+     * 注册表信息的获取
+     * 
+     * 全量或者增量的从服务端获取Applications
+     */
+    private boolean fetchRegistry(boolean forceFullRegistryFetch) {
+        Stopwatch tracer = FETCH_REGISTRY_TIMER.start();
+
+        try {
+            //如果增量获取被禁止，或者第一次启动，都进行全量获取
+            //这里的逻辑和服务端从远端region获取的逻辑基本上一致
+            Applications applications = getApplications();
+
+            if (clientConfig.shouldDisableDelta()
+                    || (!Strings.isNullOrEmpty(clientConfig.getRegistryRefreshSingleVipAddress()))
+                    || forceFullRegistryFetch
+                    || (applications == null)
+                    || (applications.getRegisteredApplications().size() == 0)
+                    || (applications.getVersion() == -1)) //Client application does not have latest library supporting delta
+            {
+                logger.info("Disable delta property : {}", clientConfig.shouldDisableDelta());
+                logger.info("Single vip registry refresh property : {}", clientConfig.getRegistryRefreshSingleVipAddress());
+                logger.info("Force full registry fetch : {}", forceFullRegistryFetch);
+                logger.info("Application is null : {}", (applications == null));
+                logger.info("Registered Applications size is zero : {}",
+                        (applications.getRegisteredApplications().size() == 0));
+                logger.info("Application version is -1: {}", (applications.getVersion() == -1));
+                getAndStoreFullRegistry();
+            } else {
+                getAndUpdateDelta(applications);
+            }
+            //记录hash值
+            applications.setAppsHashCode(applications.getReconcileHashCode());
+            //日志记录一共获取了多少个实例信息
+            logTotalInstances();
+        } catch (Throwable e) {
+            logger.error(PREFIX + "{} - was unable to refresh its cache! status = {}", appPathIdentifier, e.getMessage(), e);
+            return false;
+        } finally {
+            if (tracer != null) {
+                tracer.stop();
+            }
+        }
+
+        // Notify about cache refresh before updating the instance remote status
+        //广播一个CacheRefreshedEvent事件
+        onCacheRefreshed();
+
+        // Update remote status based on refreshed data held in the cache
+        // 将从服务端获取下来的本服务的状态更新到本地缓存
+        updateInstanceRemoteStatus();
+
+        // registry was fetched successfully, so return true
+        return true;
+    }
+
+    /**
+     * Gets the full registry information from the eureka server and stores it locally.
+     *
+     * 从eureka服务端获取全量的注册表信息并保存到本地
+     * 
+     */
+    private void getAndStoreFullRegistry() throws Throwable {
+        long currentUpdateGeneration = fetchRegistryGeneration.get();
+
+        logger.info("Getting all instance registry info from the eureka server");
+
+        Applications apps = null;
+        EurekaHttpResponse<Applications> httpResponse = clientConfig.getRegistryRefreshSingleVipAddress() == null
+                ? eurekaTransport.queryClient.getApplications(remoteRegionsRef.get())
+                : eurekaTransport.queryClient.getVip(clientConfig.getRegistryRefreshSingleVipAddress(), remoteRegionsRef.get());
+        if (httpResponse.getStatusCode() == Status.OK.getStatusCode()) {
+            apps = httpResponse.getEntity();
+        }
+        logger.info("The response status is {}", httpResponse.getStatusCode());
+
+        if (apps == null) {
+            logger.error("The application is null for some reason. Not storing this information");
+        } else if (fetchRegistryGeneration.compareAndSet(currentUpdateGeneration, currentUpdateGeneration + 1)) {
+            //将结果集打乱后放到localRegionApps保存
+            localRegionApps.set(this.filterAndShuffle(apps));
+            logger.debug("Got full registry with apps hashcode {}", apps.getAppsHashCode());
+        } else {
+            logger.warn("Not updating applications as another thread is updating it already");
+        }
+    }
+
+    /**
+     * Get the delta registry information from the eureka server and update it locally.
+     *
+     * 从eureka服务端获取增联过的数据并更新到本地。
+     */
+    private void getAndUpdateDelta(Applications applications) throws Throwable {
+        long currentUpdateGeneration = fetchRegistryGeneration.get();
+
+        Applications delta = null;
+        EurekaHttpResponse<Applications> httpResponse = eurekaTransport.queryClient.getDelta(remoteRegionsRef.get());
+        if (httpResponse.getStatusCode() == Status.OK.getStatusCode()) {
+            delta = httpResponse.getEntity();
+        }
+
+        if (delta == null) {
+            logger.warn("The server does not allow the delta revision to be applied because it is not safe. "
+                    + "Hence got the full registry.");
+            //如果获取到的数据为空，进行一次全量获取。
+            getAndStoreFullRegistry();
+        } else if (fetchRegistryGeneration.compareAndSet(currentUpdateGeneration, currentUpdateGeneration + 1)) {
+            logger.debug("Got delta update with apps hashcode {}", delta.getAppsHashCode());
+            String reconcileHashCode = "";
+            if (fetchRegistryUpdateLock.tryLock()) {
+                try {
+                    updateDelta(delta);
+                    reconcileHashCode = getReconcileHashCode(applications);
+                } finally {
+                    fetchRegistryUpdateLock.unlock();
+                }
+            } else {
+                logger.warn("Cannot acquire update lock, aborting getAndUpdateDelta");
+            }
+            // There is a diff in number of instances for some reason
+            if (!reconcileHashCode.equals(delta.getAppsHashCode()) || clientConfig.shouldLogDeltaDiff()) {
+                reconcileAndLogDifference(delta, reconcileHashCode);  // this makes a remoteCall
+            }
+        } else {
+            logger.warn("Not updating application delta as another thread is updating it already");
+            logger.debug("Ignoring delta update with apps hashcode {}, as another thread is updating it already", delta.getAppsHashCode());
+        }
+    }
+
+    /**
+     * Updates the delta information fetches from the eureka server into the
+     * local cache.
+     * 将从eureka服务端获取到的增量信息更新到本地。
+     */
+    private void updateDelta(Applications delta) {
+        int deltaCount = 0;
+        for (Application app : delta.getRegisteredApplications()) {
+            for (InstanceInfo instance : app.getInstances()) {
+                Applications applications = getApplications();
+                String instanceRegion = instanceRegionChecker.getInstanceRegion(instance);
+                if (!instanceRegionChecker.isLocalRegion(instanceRegion)) {
+                    Applications remoteApps = remoteRegionVsApps.get(instanceRegion);
+                    if (null == remoteApps) {
+                        remoteApps = new Applications();
+                        remoteRegionVsApps.put(instanceRegion, remoteApps);
+                    }
+                    applications = remoteApps;
+                }
+
+                ++deltaCount;
+                if (ActionType.ADDED.equals(instance.getActionType())) {
+                    Application existingApp = applications.getRegisteredApplications(instance.getAppName());
+                    if (existingApp == null) {
+                        applications.addApplication(app);
+                    }
+                    logger.debug("Added instance {} to the existing apps in region {}", instance.getId(), instanceRegion);
+                    applications.getRegisteredApplications(instance.getAppName()).addInstance(instance);
+                } else if (ActionType.MODIFIED.equals(instance.getActionType())) {
+                    Application existingApp = applications.getRegisteredApplications(instance.getAppName());
+                    if (existingApp == null) {
+                        applications.addApplication(app);
+                    }
+                    logger.debug("Modified instance {} to the existing apps ", instance.getId());
+
+                    applications.getRegisteredApplications(instance.getAppName()).addInstance(instance);
+
+                } else if (ActionType.DELETED.equals(instance.getActionType())) {
+                    Application existingApp = applications.getRegisteredApplications(instance.getAppName());
+                    if (existingApp != null) {
+                        logger.debug("Deleted instance {} to the existing apps ", instance.getId());
+                        existingApp.removeInstance(instance);
+                        /*
+                         * We find all instance list from application(The status of instance status is not only the status is UP but also other status)
+                         * if instance list is empty, we remove the application.
+                         */
+                        if (existingApp.getInstancesAsIsFromEureka().isEmpty()) {
+                            applications.removeApplication(existingApp);
+                        }
+                    }
+                }
+            }
+        }
+        logger.debug("The total number of instances fetched by the delta processor : {}", deltaCount);
+
+        getApplications().setVersion(delta.getVersion());
+        getApplications().shuffleInstances(clientConfig.shouldFilterOnlyUpInstances());
+
+        for (Applications applications : remoteRegionVsApps.values()) {
+            applications.setVersion(delta.getVersion());
+            applications.shuffleInstances(clientConfig.shouldFilterOnlyUpInstances());
+        }
+    }
+
+
+    /**
+     * Reconcile the eureka server and client registry information and logs the differences if any.
+     *
+     * 
+     */
+    private void reconcileAndLogDifference(Applications delta, String reconcileHashCode) throws Throwable {
+        logger.debug("The Reconcile hashcodes do not match, client : {}, server : {}. Getting the full registry",
+                reconcileHashCode, delta.getAppsHashCode());
+
+        RECONCILE_HASH_CODES_MISMATCH.increment();
+
+        long currentUpdateGeneration = fetchRegistryGeneration.get();
+
+        EurekaHttpResponse<Applications> httpResponse = clientConfig.getRegistryRefreshSingleVipAddress() == null
+                ? eurekaTransport.queryClient.getApplications(remoteRegionsRef.get())
+                : eurekaTransport.queryClient.getVip(clientConfig.getRegistryRefreshSingleVipAddress(), remoteRegionsRef.get());
+        Applications serverApps = httpResponse.getEntity();
+
+        if (serverApps == null) {
+            logger.warn("Cannot fetch full registry from the server; reconciliation failure");
+            return;
+        }
+
+        if (fetchRegistryGeneration.compareAndSet(currentUpdateGeneration, currentUpdateGeneration + 1)) {
+            localRegionApps.set(this.filterAndShuffle(serverApps));
+            getApplications().setVersion(delta.getVersion());
+            logger.debug(
+                    "The Reconcile hashcodes after complete sync up, client : {}, server : {}.",
+                    getApplications().getReconcileHashCode(),
+                    delta.getAppsHashCode());
+        } else {
+            logger.warn("Not setting the applications map as another thread has advanced the update generation");
+        }
+    }
+
 }
 ```
 
