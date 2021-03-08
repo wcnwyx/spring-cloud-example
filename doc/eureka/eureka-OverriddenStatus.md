@@ -247,3 +247,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
     }
 }
 ```
+
+##问题：
+如果说statusUpdate将状态设置为OUT_OF_SERVICE后，是否可以再使用statusUpdate将状态设置为UP呢，而不使用deleteStatusOverride？  
+顺着逻辑捋下来也是没问题的，服务续约会通过OverrideExistsRule规则获取到UP状态，正常下线后重新上线也没问题，异常中断下线再次注册上来也可以通过OverrideExistsRule规则获取到UP状态。  
