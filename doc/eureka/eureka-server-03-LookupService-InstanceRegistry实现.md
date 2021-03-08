@@ -2,7 +2,7 @@ LookupService接口的功能和InstanceRegistry接口的部分功能是类似的
 这一篇主要是看LookupService接口全部实现方法和InstanceRegistry接口的获取Applications、Application、InstanceInfo部分功能。    
 只看大概的几个就好，其它的都类似，只是通过不同的参数获取而已。  
 
-##源码分析
+##AbstractInstanceRegistry源码
 ```java
 public abstract class AbstractInstanceRegistry implements InstanceRegistry {
 
@@ -134,9 +134,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
     /**
      * Gets the {@link InstanceInfo} information.
      *
-     * @param appName the application name for which the information is requested.
-     * @param id the unique identifier of the instance.
-     * @return the information about the instance.
+     * 通过appName和id获取实例信息
      */
     @Override
     public InstanceInfo getInstanceByAppAndId(String appName, String id) {
@@ -146,12 +144,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
     /**
      * Gets the {@link InstanceInfo} information.
      *
-     * @param appName the application name for which the information is requested.
-     * @param id the unique identifier of the instance.
-     * @param includeRemoteRegions true, if we need to include applications from remote regions
-     *                             as indicated by the region {@link URL} by this property
-     *                             {@link EurekaServerConfig#getRemoteRegionUrls()}, false otherwise
-     * @return the information about the instance.
+     * 通过appName、id参数获取实例信息，支持从其它region节点获取
      */
     @Override
     public InstanceInfo getInstanceByAppAndId(String appName, String id, boolean includeRemoteRegions) {
@@ -162,6 +155,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
         }
         if (lease != null
                 && (!isLeaseExpirationEnabled() || !lease.isExpired())) {
+            //只有租约过期不可用或者租约未过期才返回
             return decorateInstanceInfo(lease);
         } else if (includeRemoteRegions) {
             for (RemoteRegionRegistry remoteRegistry : this.regionNameVSRemoteRegistry.values()) {
@@ -172,66 +166,6 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
             }
         }
         return null;
-    }
-
-
-    /**
-     * @deprecated Try {@link #getInstanceByAppAndId(String, String)} instead.
-     *
-     * Get all instances by ID, including automatically asking other regions if the ID is unknown.
-     *
-     * @see com.netflix.discovery.shared.LookupService#getInstancesById(String)
-     */
-    @Deprecated
-    public List<InstanceInfo> getInstancesById(String id) {
-        return this.getInstancesById(id, true);
-    }
-
-    /**
-     * @deprecated Try {@link #getInstanceByAppAndId(String, String, boolean)} instead.
-     *
-     * Get the list of instances by its unique id.
-     *
-     * @param id the unique id of the instance
-     * @param includeRemoteRegions true, if we need to include applications from remote regions
-     *                             as indicated by the region {@link URL} by this property
-     *                             {@link EurekaServerConfig#getRemoteRegionUrls()}, false otherwise
-     * @return list of InstanceInfo objects.
-     */
-    @Deprecated
-    public List<InstanceInfo> getInstancesById(String id, boolean includeRemoteRegions) {
-        List<InstanceInfo> list = new ArrayList<InstanceInfo>();
-
-        for (Iterator<Entry<String, Map<String, Lease<InstanceInfo>>>> iter =
-                     registry.entrySet().iterator(); iter.hasNext(); ) {
-
-            Map<String, Lease<InstanceInfo>> leaseMap = iter.next().getValue();
-            if (leaseMap != null) {
-                Lease<InstanceInfo> lease = leaseMap.get(id);
-
-                if (lease == null || (isLeaseExpirationEnabled() && lease.isExpired())) {
-                    continue;
-                }
-
-                if (list == Collections.EMPTY_LIST) {
-                    list = new ArrayList<InstanceInfo>();
-                }
-                list.add(decorateInstanceInfo(lease));
-            }
-        }
-        if (list.isEmpty() && includeRemoteRegions) {
-            for (RemoteRegionRegistry remoteRegistry : this.regionNameVSRemoteRegistry.values()) {
-                for (Application application : remoteRegistry.getApplications()
-                        .getRegisteredApplications()) {
-                    InstanceInfo instanceInfo = application.getByInstanceId(id);
-                    if (instanceInfo != null) {
-                        list.add(instanceInfo);
-                        return list;
-                    }
-                }
-            }
-        }
-        return list;
     }
 }
 ```

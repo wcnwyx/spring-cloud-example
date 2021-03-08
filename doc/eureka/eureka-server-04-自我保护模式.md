@@ -11,9 +11,8 @@
 为了更好地理解自我保护，首先了解eureka客户机如何“结束”其注册生命周期很有帮助。eureka协议要求客户端在永久离开时执行显式的注销操作。例如，在提供的java客户机中，这是在shutdown（）方法中完成的。任何连续3次心跳更新失败的客户端都将被视为具有不干净的终止，并将被后台逐出进程逐出。当当前注册表的>15%处于稍后的状态时，将启用自我保护。
 
 > When in self preservation mode, eureka servers will stop eviction of all instances until either:
-  
-  1. the number of heartbeat renewals it sees is back above the expected threshold, or
-  2. self preservation is disabled (see below)
+>  1. the number of heartbeat renewals it sees is back above the expected threshold, or
+>  2. self preservation is disabled (see below)
   
 当处于自我保护模式时，eureka服务器将停止逐出所有实例，直到已下两种情况发生：
 1. 心跳更新次数重新高于预期阈值
@@ -23,6 +22,19 @@
 
 默认情况下启用自我保护，并且启用自我保护的默认阈值大于当前注册表大小的15%。
 
+> ###How to configure self preservation threshold
+> To change self preservation threshold in the example, set the property: eureka.renewalPercentThreshold=[0.0, 1.0]
+
+如何配置自我保护的阀值  
+通过属性eureka.renewalPercentThreshold来改变
+
+> ###How to disable self preservation
+> To disable self preservation in the example, set the property: eureka.enableSelfPreservation=false.
+
+如何禁止自我保护  
+通过属性eureka.enableSelfPreservation=false来设置
+
+---
 
 ##源码分析
 源码只展示一些相关的参数和代码， 如下所示：  

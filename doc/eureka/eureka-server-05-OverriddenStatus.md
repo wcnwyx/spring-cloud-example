@@ -1,4 +1,5 @@
-AbstractInstanceRegistry进行租约管理的多个地方都用到了overriddenStatus这个字段信息，  
+这一篇主要是看下InstanceRegistry接口中关于overriddenStatus的相关操作。  
+
 ##先看一下InstanceInfo关于该字段的注释：  
 ```java
 public class InstanceInfo {
