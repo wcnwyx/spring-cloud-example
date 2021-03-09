@@ -367,3 +367,4 @@ public class ResponseCacheImpl implements ResponseCache {
 3. readOnlyCache中的数据通过定时任务定时和readWriteCache中的数据进行同步。
 4. 有数据变更时，直接通过invalidate将缓存失效，等下次请求时再次生成。
 5. readWriteCache本身是自带失效时间功能。
+6. 因为有两级缓存，所以只读缓存的更新可能会有所延迟，毕竟是线程定时去更新的。比如说一个key的缓存已经失效了，readWriteCache中已经没有了，但是readOnly里还有老的数据缓存，客户端还是会从readOnly中获取到老数据。

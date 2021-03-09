@@ -10,8 +10,19 @@ eureka:
     instance-id: ${spring.cloud.client.ip-address}:${server.port} #euraka实例列表中显示的id
     prefer-ip-address: true
   client:
+    #该应用为注册中心，设置为false表示不向注册中心注册自己，集群配置是必须设置为true
+    register-with-eureka: true
+    #该应用为注册中心，设置为false表示不需要要去检索服务，集群配置是必须设置为true
+    fetch-registry: true
+    fetch-remote-regions-registry: shanghai #获取哪些远端region的注册表信息
+    region: beijing #该服务所在的region
+    prefer-same-zone-eureka: true #是否优先和相同zone的server进行交互
+    availability-zones:
+      shanghai: shanghai-zone-1,shanghai-zone-2 #第一个就代表自己所在的zone
+      beijing: beijing-zone-1,beijing-zone-2
     service-url:
-      defaultZone: http://eureka-server-7001.com:7001/eureka/,http://eureka-server-7002.com:7002/eureka/,http://eureka-server-7003.com:7003/eureka/
+      beijing-zone-1: http://eureka-server-beijing-zone1-7003.com:7003/eureka/ #同一个zone里也可以配置多个，逗号分隔即可
+      beijing-zone-2: http://eureka-server-beijing-zone2-7004.com:7004/eureka/
 
 #开启支持hystrix dashboard
 management:

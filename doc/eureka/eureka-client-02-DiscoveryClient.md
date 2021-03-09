@@ -140,6 +140,8 @@ public class DiscoveryClient implements EurekaClient {
 
     //保存本从服务端获取到的Applications数据
     private final AtomicReference<Applications> localRegionApps = new AtomicReference<Applications>();
+    //保存着从其它region获取下来的Applications数据
+    private volatile Map<String, Applications> remoteRegionVsApps = new ConcurrentHashMap<>();
 
     //一个计数器，用于防止老的线程将注册表信息更新为老的版本
     private final AtomicLong fetchRegistryGeneration;
@@ -148,6 +150,8 @@ public class DiscoveryClient implements EurekaClient {
     private final AtomicReference<String> remoteRegionsToFetch;
     //将remoteRegionsToFetch解析为regionName数组
     private final AtomicReference<String[]> remoteRegionsRef;
+    //根据InstanceInfo获取region，如果不是部署在亚马逊云上的话，返回的都是null
+    private final InstanceRegionChecker instanceRegionChecker;
 
     /**
      * Fetches the registry information.
@@ -262,6 +266,7 @@ public class DiscoveryClient implements EurekaClient {
             String reconcileHashCode = "";
             if (fetchRegistryUpdateLock.tryLock()) {
                 try {
+                    //将增量数据更新到本地Applications中（这些逻辑和RemoteRegionRegistry中的一样，这里就不看了）
                     updateDelta(delta);
                     reconcileHashCode = getReconcileHashCode(applications);
                 } finally {
@@ -272,6 +277,8 @@ public class DiscoveryClient implements EurekaClient {
             }
             // There is a diff in number of instances for some reason
             if (!reconcileHashCode.equals(delta.getAppsHashCode()) || clientConfig.shouldLogDeltaDiff()) {
+                //更新过增量数据后，本地的Applications计算的hash值和服务端的不一样，直接进行一次全量更新
+                //这些逻辑和RemoteRegionRegistry中的一样，这里就不看了
                 reconcileAndLogDifference(delta, reconcileHashCode);  // this makes a remoteCall
             }
         } else {
@@ -280,10 +287,12 @@ public class DiscoveryClient implements EurekaClient {
         }
     }
 
+
     /**
      * Updates the delta information fetches from the eureka server into the
      * local cache.
-     * 将从eureka服务端获取到的增量信息更新到本地。
+     * 将从服务端获取到的增量数据更新到本地缓存中
+     * 只是看下remoteRegionVsApps的使用，不同ActionType是如何更新到本地的和RemoteRegionRegistry中的逻辑一样
      */
     private void updateDelta(Applications delta) {
         int deltaCount = 0;
@@ -295,6 +304,7 @@ public class DiscoveryClient implements EurekaClient {
                     Applications remoteApps = remoteRegionVsApps.get(instanceRegion);
                     if (null == remoteApps) {
                         remoteApps = new Applications();
+                        //如果服务端获取到的InstanceInfo不是本客户端所在的region话，保存在remoteRegionVsApps缓存中
                         remoteRegionVsApps.put(instanceRegion, remoteApps);
                     }
                     applications = remoteApps;
@@ -344,42 +354,104 @@ public class DiscoveryClient implements EurekaClient {
         }
     }
 
+    /**
+     * Invoked every time the local registry cache is refreshed (whether changes have
+     * been detected or not).
+     * 
+     * 本地注册表信息刷新后每次都调用该方法，不管是否有改变
+     * 
+     * Subclasses may override this method to implement custom behavior if needed.
+     * 子类可以覆盖该方法去自定义行为
+     */
+    protected void onCacheRefreshed() {
+        fireEvent(new CacheRefreshedEvent());
+    }
 
     /**
-     * Reconcile the eureka server and client registry information and logs the differences if any.
-     *
-     * 
+     * Send the given event on the EventBus if one is available
+     * 将事件发送到总线
      */
-    private void reconcileAndLogDifference(Applications delta, String reconcileHashCode) throws Throwable {
-        logger.debug("The Reconcile hashcodes do not match, client : {}, server : {}. Getting the full registry",
-                reconcileHashCode, delta.getAppsHashCode());
-
-        RECONCILE_HASH_CODES_MISMATCH.increment();
-
-        long currentUpdateGeneration = fetchRegistryGeneration.get();
-
-        EurekaHttpResponse<Applications> httpResponse = clientConfig.getRegistryRefreshSingleVipAddress() == null
-                ? eurekaTransport.queryClient.getApplications(remoteRegionsRef.get())
-                : eurekaTransport.queryClient.getVip(clientConfig.getRegistryRefreshSingleVipAddress(), remoteRegionsRef.get());
-        Applications serverApps = httpResponse.getEntity();
-
-        if (serverApps == null) {
-            logger.warn("Cannot fetch full registry from the server; reconciliation failure");
-            return;
-        }
-
-        if (fetchRegistryGeneration.compareAndSet(currentUpdateGeneration, currentUpdateGeneration + 1)) {
-            localRegionApps.set(this.filterAndShuffle(serverApps));
-            getApplications().setVersion(delta.getVersion());
-            logger.debug(
-                    "The Reconcile hashcodes after complete sync up, client : {}, server : {}.",
-                    getApplications().getReconcileHashCode(),
-                    delta.getAppsHashCode());
-        } else {
-            logger.warn("Not setting the applications map as another thread has advanced the update generation");
+    protected void fireEvent(final EurekaEvent event) {
+        for (EurekaEventListener listener : eventListeners) {
+            try {
+                listener.onEvent(event);
+            } catch (Exception e) {
+                logger.info("Event {} throw an exception for listener {}", event, listener, e.getMessage());
+            }
         }
     }
 
+    //从本地Applications中根据appName获取Application
+    public Application getApplication(String appName) {
+        return getApplications().getRegisteredApplications(appName);
+    }
+
+    
+    //获取Applications
+    public Applications getApplications() {
+        return localRegionApps.get();
+    }
+    
+    //从指定region中获取Applications信息
+    public Applications getApplicationsForARegion(@Nullable String region) {
+        if (instanceRegionChecker.isLocalRegion(region)) {
+            return localRegionApps.get();
+        } else {
+            return remoteRegionVsApps.get(region);
+        }
+    }
+
+}
+
+//检查InstanceInfo所在的region
+public class InstanceRegionChecker {
+    private static Logger logger = LoggerFactory.getLogger(InstanceRegionChecker.class);
+
+    private final AzToRegionMapper azToRegionMapper;
+    private final String localRegion;
+
+    InstanceRegionChecker(AzToRegionMapper azToRegionMapper, String localRegion) {
+        this.azToRegionMapper = azToRegionMapper;
+        this.localRegion = localRegion;
+    }
+
+    @Nullable
+    public String getInstanceRegion(InstanceInfo instanceInfo) {
+        if (instanceInfo.getDataCenterInfo() == null || instanceInfo.getDataCenterInfo().getName() == null) {
+            logger.warn("Cannot get region for instance id:{}, app:{} as dataCenterInfo is null. Returning local:{} by default",
+                    instanceInfo.getId(), instanceInfo.getAppName(), localRegion);
+
+            return localRegion;
+        }
+        if (DataCenterInfo.Name.Amazon.equals(instanceInfo.getDataCenterInfo().getName())) {
+            AmazonInfo amazonInfo = (AmazonInfo) instanceInfo.getDataCenterInfo();
+            Map<String, String> metadata = amazonInfo.getMetadata();
+            String availabilityZone = metadata.get(AmazonInfo.MetaDataKey.availabilityZone.getName());
+            if (null != availabilityZone) {
+                return azToRegionMapper.getRegionForAvailabilityZone(availabilityZone);
+            }
+        }
+
+        return null;
+    }
+
+    public boolean isLocalRegion(@Nullable String instanceRegion) {
+        return null == instanceRegion || instanceRegion.equals(localRegion); // no region == local
+    }
+
+    public String getLocalRegion() {
+        return localRegion;
+    }
+}
+
+//默认的DataCenterInfo是在这里定义的
+public abstract class AbstractInstanceConfig implements EurekaInstanceConfig {
+    private DataCenterInfo info = new DataCenterInfo() {
+            @Override
+            public Name getName() {
+                return Name.MyOwn;
+            }
+        };
 }
 ```
 
@@ -542,3 +614,6 @@ public class DiscoveryClient implements EurekaClient {
     }
 }
 ```
+
+总结：
+尽管通过配置文件配置了fetch-remote-regions-registry，如果不是部署在亚马逊云上的话，remote regions的注册表信息是可以拉去下来的，但是不会保存到remoteRegionVsApps中，根据指定region来获取Applications时，是获取不到数据的。
