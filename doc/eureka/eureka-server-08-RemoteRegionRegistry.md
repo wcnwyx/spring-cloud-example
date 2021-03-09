@@ -158,7 +158,8 @@ public class RemoteRegionRegistry implements LookupService<String> {
                 try {
                     //将增量数据更新到本地缓存
                     updateDelta(delta);
-                    //生成hashcode用来比对数据
+                    //服务端再返回数据的时候会将Applications的hash值也发送过来，
+                    //上一步将增量数据更新到本地后，本地再算一个hash值相比较
                     reconcileHashCode = getApplications().getReconcileHashCode();
                 } finally {
                     fetchRegistryUpdateLock.unlock();
@@ -188,6 +189,7 @@ public class RemoteRegionRegistry implements LookupService<String> {
             for (InstanceInfo instance : app.getInstances()) {
                 ++deltaCount;
                 if (ActionType.ADDED.equals(instance.getActionType())) {
+                    //新增的操作，直接加到本地的Applications中
                     Application existingApp = getApplications()
                             .getRegisteredApplications(instance.getAppName());
                     if (existingApp == null) {
@@ -198,6 +200,7 @@ public class RemoteRegionRegistry implements LookupService<String> {
                     getApplications().getRegisteredApplications(
                             instance.getAppName()).addInstance(instance);
                 } else if (ActionType.MODIFIED.equals(instance.getActionType())) {
+                    //修改的操作，直接用新的覆盖本地的数据
                     Application existingApp = getApplications()
                             .getRegisteredApplications(instance.getAppName());
                     if (existingApp == null) {
@@ -210,6 +213,7 @@ public class RemoteRegionRegistry implements LookupService<String> {
                             instance.getAppName()).addInstance(instance);
 
                 } else if (ActionType.DELETED.equals(instance.getActionType())) {
+                    //删除的数据，将本地也删除
                     Application existingApp = getApplications()
                             .getRegisteredApplications(instance.getAppName());
                     if (existingApp == null) {
@@ -294,7 +298,7 @@ public class RemoteRegionRegistry implements LookupService<String> {
 
     /**
      * Reconciles the delta information fetched to see if the hashcodes match.
-     * 将增量获取的信息进行hash校验，校验不通过就进行一次全量获取。
+     * 获取一次增量数据后，远程和本地Applications的hash值对应不上，说明有偏差，直接进行全量获取。
      */
     private boolean reconcileAndLogDifference(Applications delta, String reconcileHashCode) throws Throwable {
         logger.warn("The Reconcile hashcodes do not match, client : {}, server : {}. Getting the full registry",
@@ -354,3 +358,8 @@ public class RemoteRegionRegistry implements LookupService<String> {
 ```
 
 总结：用于从远端region增量或者全量的获取注册表数据，并缓存到本地。
+1. 初次启动，直接获取全量数据。
+2. 后续启用定时任务从远端region获取增量数据。
+3. 增量数据根据不同的动作类型（ADDED、MODIFIED、DELETED）更新到本地的Applications中，然后计算本地Applications的hash值和远端的Applications的hash值进行对比。
+4. 如果hash值对不上，说明增量更新后有问题，直接再进行一次全量更新。
+注意：这个逻辑其实和DiscoveryClient的获取注册表信息的逻辑是一样的。

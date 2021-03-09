@@ -127,6 +127,7 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
                 }
             }
         }
+        //记录一个hsahs值，用于校验
         apps.setAppsHashCode(apps.getReconcileHashCode());
         return apps;
     }

@@ -39,6 +39,8 @@ public abstract class AbstractInstanceRegistry implements InstanceRegistry {
     //InstanceRegistry接口定义的统计信息获取的相关数据存储结构
     private final CircularQueue<Pair<Long, String>> recentRegisteredQueue;
     private final CircularQueue<Pair<Long, String>> recentCanceledQueue;
+    
+    //保存着近期更改的租约信息，用于增量获取数据时使用
     private ConcurrentLinkedQueue<RecentlyChangedItem> recentlyChangedQueue = new ConcurrentLinkedQueue<RecentlyChangedItem>();
 
     //读写锁控制多线程逻辑

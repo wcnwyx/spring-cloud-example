@@ -43,6 +43,7 @@ DiscoveryClient大致有以下功能点：
 这个类代码一起看的话比较多，下面拆分几个部分分开了解。   
 
 ##租约管理相关功能
+租约管理的相关功能用的都是都是eurekaTransport.registrationClient
 ```java
 @Singleton
 public class DiscoveryClient implements EurekaClient {
@@ -132,6 +133,7 @@ public class DiscoveryClient implements EurekaClient {
 ```
 
 ##应用、实例信息的获取相关
+网络交互式都是使用的eurekaTransport.queryClient
 ```java
 @Singleton
 public class DiscoveryClient implements EurekaClient {
@@ -141,6 +143,11 @@ public class DiscoveryClient implements EurekaClient {
 
     //一个计数器，用于防止老的线程将注册表信息更新为老的版本
     private final AtomicLong fetchRegistryGeneration;
+    
+    //clientConfig.fetch-remote-regions-registry配置的远端region名称集合字符串，逗号分隔多个
+    private final AtomicReference<String> remoteRegionsToFetch;
+    //将remoteRegionsToFetch解析为regionName数组
+    private final AtomicReference<String[]> remoteRegionsRef;
 
     /**
      * Fetches the registry information.
@@ -211,6 +218,7 @@ public class DiscoveryClient implements EurekaClient {
         logger.info("Getting all instance registry info from the eureka server");
 
         Applications apps = null;
+        //发送请求时会将remoteRegion信息带过去，服务端就会判断为是否获取其它region的数据，这个服务端源码有体现
         EurekaHttpResponse<Applications> httpResponse = clientConfig.getRegistryRefreshSingleVipAddress() == null
                 ? eurekaTransport.queryClient.getApplications(remoteRegionsRef.get())
                 : eurekaTransport.queryClient.getVip(clientConfig.getRegistryRefreshSingleVipAddress(), remoteRegionsRef.get());

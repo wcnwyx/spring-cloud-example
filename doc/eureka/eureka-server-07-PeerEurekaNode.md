@@ -231,7 +231,7 @@ public class PeerEurekaNodes {
 ###总结：
 1. PeerEurekaNodes用来保存了PeerEurekaNode的一组集合，并管理他们的生命周期（创建和销毁）。
 2. 定时根据配置文件新增或者销毁PeerEurekaNode。
-3. 只是解析和自己想通region的节点。
+3. 只是解析和自己相同region的节点。
 
 ##PeerEurekaNode
 ```java

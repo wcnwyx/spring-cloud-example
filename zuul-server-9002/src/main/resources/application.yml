@@ -14,7 +14,7 @@ eureka:
     register-with-eureka: true
     #该应用为注册中心，设置为false表示不需要要去检索服务，集群配置是必须设置为true
     fetch-registry: true
-    fetch-remote-regions-registry: beijing
+    fetch-remote-regions-registry: beijing #获取哪些远端region的注册表信息
     region: shanghai #该服务所在的region
     prefer-same-zone-eureka: true #是否优先和相同zone的server进行交互
     availability-zones:
