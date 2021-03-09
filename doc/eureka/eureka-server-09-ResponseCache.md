@@ -124,7 +124,7 @@ public class ResponseCacheImpl implements ResponseCache {
     private final ConcurrentMap<Key, Value> readOnlyCacheMap = new ConcurrentHashMap<Key, Value>();
     //读写缓存
     private final LoadingCache<Key, Value> readWriteCacheMap;
-    //表示是否只是用只读缓存
+    //表示是否使用只读缓存，是的话会优先从只读缓存中获取
     private final boolean shouldUseReadOnlyResponseCache;
     private final AbstractInstanceRegistry registry;
     private final EurekaServerConfig serverConfig;
@@ -139,7 +139,9 @@ public class ResponseCacheImpl implements ResponseCache {
         long responseCacheUpdateIntervalMs = serverConfig.getResponseCacheUpdateIntervalMs();
         this.readWriteCacheMap =
                 CacheBuilder.newBuilder().initialCapacity(serverConfig.getInitialCapacityOfResponseCache())
+                        //设置过期时间
                         .expireAfterWrite(serverConfig.getResponseCacheAutoExpirationInSeconds(), TimeUnit.SECONDS)
+                        //移除时调用的处理器
                         .removalListener(new RemovalListener<Key, Value>() {
                             @Override
                             public void onRemoval(RemovalNotification<Key, Value> notification) {
@@ -152,6 +154,7 @@ public class ResponseCacheImpl implements ResponseCache {
                             }
                         })
                         .build(new CacheLoader<Key, Value>() {
+                            //如果缓存中没有，通过此load方法来加载
                             @Override
                             public Value load(Key key) throws Exception {
                                 if (key.hasRegions()) {
@@ -257,5 +260,110 @@ public class ResponseCacheImpl implements ResponseCache {
         }
         return result;
     }
+
+    /**
+     * Invalidate the cache of a particular application.
+     *
+     * 将制定的application的缓存失效掉
+     */
+    @Override
+    public void invalidate(String appName, @Nullable String vipAddress, @Nullable String secureVipAddress) {
+        //循环所有的keyType（JSON、XML）
+        for (Key.KeyType type : Key.KeyType.values()) {
+            //所有的版本（V1、V2）
+            for (Version v : Version.values()) {
+                invalidate(
+                        //每种keyType、version都可以组成一下6个key，全部失效处理
+                        new Key(Key.EntityType.Application, appName, type, v, EurekaAccept.full),
+                        new Key(Key.EntityType.Application, appName, type, v, EurekaAccept.compact),
+                        new Key(Key.EntityType.Application, ALL_APPS, type, v, EurekaAccept.full),
+                        new Key(Key.EntityType.Application, ALL_APPS, type, v, EurekaAccept.compact),
+                        new Key(Key.EntityType.Application, ALL_APPS_DELTA, type, v, EurekaAccept.full),
+                        new Key(Key.EntityType.Application, ALL_APPS_DELTA, type, v, EurekaAccept.compact)
+                );
+                if (null != vipAddress) {
+                    //如果有vipAddress，将VIP类型的缓存也失效掉
+                    invalidate(new Key(Key.EntityType.VIP, vipAddress, type, v, EurekaAccept.full));
+                }
+                if (null != secureVipAddress) {
+                    //如果有secureVipAddress，将SVIP类型的缓存也失效掉
+                    invalidate(new Key(Key.EntityType.SVIP, secureVipAddress, type, v, EurekaAccept.full));
+                }
+            }
+        }
+    }
+
+    public void invalidate(Key... keys) {
+        for (Key key : keys) {
+            logger.debug("Invalidating the response cache key : {} {} {} {}, {}",
+                    key.getEntityType(), key.getName(), key.getVersion(), key.getType(), key.getEurekaAccept());
+
+            //将读写缓存失效掉
+            readWriteCacheMap.invalidate(key);
+
+            Collection<Key> keysWithRegions = regionSpecificKeys.get(key);
+            if (null != keysWithRegions && !keysWithRegions.isEmpty()) {
+                //如果该key有对应的带有region的key，将这些key对应的缓存也失效掉
+                for (Key keysWithRegion : keysWithRegions) {
+                    logger.debug("Invalidating the response cache key : {} {} {} {} {}",
+                            key.getEntityType(), key.getName(), key.getVersion(), key.getType(), key.getEurekaAccept());
+                    readWriteCacheMap.invalidate(keysWithRegion);
+                }
+            }
+        }
+    }
+
+
+    Value getValue(final Key key, boolean useReadOnlyCache) {
+        Value payload = null;
+        try {
+            if (useReadOnlyCache) {
+                //先从只读缓存中获取
+                final Value currentPayload = readOnlyCacheMap.get(key);
+                if (currentPayload != null) {
+                    payload = currentPayload;
+                } else {
+                    //从readWriteCache中获取，再更新到只读缓存中
+                    payload = readWriteCacheMap.get(key);
+                    readOnlyCacheMap.put(key, payload);
+                }
+            } else {
+                //不适用只读缓存，直接从readWriteCache中获取
+                payload = readWriteCacheMap.get(key);
+            }
+        } catch (Throwable t) {
+            logger.error("Cannot get value for key : {}", key, t);
+        }
+        return payload;
+    }
+
+    //更新只读缓存的定时任务
+    private TimerTask getCacheUpdateTask() {
+        return new TimerTask() {
+            @Override
+            public void run() {
+                logger.debug("Updating the client cache from response cache");
+                for (Key key : readOnlyCacheMap.keySet()) {
+                    try {
+                        CurrentRequestVersion.set(key.getVersion());
+                        Value cacheValue = readWriteCacheMap.get(key);
+                        Value currentCacheValue = readOnlyCacheMap.get(key);
+                        if (cacheValue != currentCacheValue) {
+                            readOnlyCacheMap.put(key, cacheValue);
+                        }
+                    } catch (Throwable th) {
+                        logger.error("Error while updating the client cache from response cache for key {}", key.toStringCompact(), th);
+                    }
+                }
+            }
+        };
+    }
+
 }
 ```
+总结：
+1. ResponseCacheImpl通过两层缓存来实现，readOnlyCache和readWriteCache，可以通过配置来禁用掉readOnlyCache。
+2. 收到请求时，先从readOnlyCache中读取，读取不到，再从readWriteCache中读取，然后更新到readOnlyCache。
+3. readOnlyCache中的数据通过定时任务定时和readWriteCache中的数据进行同步。
+4. 有数据变更时，直接通过invalidate将缓存失效，等下次请求时再次生成。
+5. readWriteCache本身是自带失效时间功能。
