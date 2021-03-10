@@ -24,6 +24,9 @@ public class InstanceInfo {
     private volatile InstanceStatus status = InstanceStatus.UP;
     private volatile InstanceStatus overriddenStatus = InstanceStatus.UNKNOWN;
     private volatile Long lastUpdatedTimestamp;
+    //标识该InstanceInfo的数据是否变更过，变更过就需要再次同步给服务端
+    private volatile boolean isInstanceInfoDirty = false;
+    //上次变更的事件
     private volatile Long lastDirtyTimestamp;
     private volatile ActionType actionType;
 }
