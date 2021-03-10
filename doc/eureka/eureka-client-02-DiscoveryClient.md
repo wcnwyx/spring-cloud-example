@@ -142,6 +142,9 @@ public class DiscoveryClient implements EurekaClient {
     private final AtomicReference<Applications> localRegionApps = new AtomicReference<Applications>();
     //保存着从其它region获取下来的Applications数据
     private volatile Map<String, Applications> remoteRegionVsApps = new ConcurrentHashMap<>();
+    //上一次从远端获取到的本client服务的InstanceInfo的状态，默认是UNKNOWN。
+    // 所以第一次更新时从服务端获取到的是UP，必定会触发一次statusChange事件
+    private volatile InstanceInfo.InstanceStatus lastRemoteInstanceStatus = InstanceInfo.InstanceStatus.UNKNOWN;
 
     //事件监听器集合，扩展使用，eureka client是作为一个事件产生方的，目前有的事件是缓存更新时间、InstanceInfo状态变更时间
     //像ribbon就需要用事件监听器来感知这些数据的变更
@@ -452,7 +455,8 @@ public class DiscoveryClient implements EurekaClient {
             currentRemoteInstanceStatus = InstanceInfo.InstanceStatus.UNKNOWN;
         }
 
-        // Notify if status changed
+        //lastRemoteInstanceStatus的默认值是UNKNOWN
+        //所以第一次更新时从服务端获取到的是UP，必定会触发一次statusChange事件
         if (lastRemoteInstanceStatus != currentRemoteInstanceStatus) {
             //状态变更后发送事件通知
             onRemoteStatusChanged(lastRemoteInstanceStatus, currentRemoteInstanceStatus);
@@ -818,8 +822,9 @@ public class DiscoveryClient implements EurekaClient {
             if (applicationInfoManager != null
                     && clientConfig.shouldRegisterWithEureka()
                     && clientConfig.shouldUnregisterOnShutdown()) {
-                //将状态设置为下线，然后从服务端注销掉
+                //将状态设置为下线，然后StatusChangeListener会将down状态注册到server端
                 applicationInfoManager.setInstanceStatus(InstanceStatus.DOWN);
+                //调用cancle注销掉服务
                 unregister();
             }
 
@@ -856,7 +861,7 @@ DiscoveryClient基本上包括了客户端所需要的全部功能，从整个�
     - StatusChangeListener 注册状态变化监听器
 2. 运行期
     - HeartbeatExecutor-renew 心跳线程定时执行续约请求
-    - CacheRefreshExecutor-refreshRegistry 刷新缓存定时任务定时增量或者全量的更新注册表信息
+    - CacheRefreshExecutor-refreshRegistry 刷新缓存定时任务，定时增量或者全量的更新注册表信息
     - StatusChangeListener InstanceInfo信息有变化是，重新向server发起register请求
 3. 关闭服务
     - 关闭定时任务（心跳、刷新缓存）
@@ -865,8 +870,9 @@ DiscoveryClient基本上包括了客户端所需要的全部功能，从整个�
     - EurekaTransport关闭
     - netflix-servo监控关闭
 
-更新注册表流程
-1. 刚启动时
-
-尽管通过配置文件配置了fetch-remote-regions-registry，如果不是部署在亚马逊云上的话，remote regions的注册表信息是可以拉去下来的，但是不会保存到remoteRegionVsApps中，根据指定region来获取Applications时，是获取不到数据的。
-客户端只需要配置其它region的名字就好，不用配置具体的网络请求地址，将region名称发给server端即可。server端会和不同的region保持数据同步的。
+注册表信息获取流程：
+1. 刚启动时进行一次全量的获取。
+2. refreshRegistry定时进行增量更新，获取到的增量数据逐条更新到本地Applications中，然后计算本地Applications的hash值和服务端的对比，一致的话就完事了，不一致的话做一次全量更新。
+3. 通过fetch-remote-regions-registry参数可以配置获取其它region里的Applications数据，获取后存在于remoteRegionVsApps这个map中保存。
+4. 尽管通过配置文件配置了fetch-remote-regions-registry，如果不是部署在亚马逊云上的话，remote regions的注册表信息是可以拉去下来的，但是不会保存到remoteRegionVsApps中，根据指定region来获取Applications时，是获取不到数据的。
+5. 客户端只需要配置其它region的名字就好，不用配置具体的网络请求地址，将region名称发给server端即可。server端会和不同的region保持数据同步的。
