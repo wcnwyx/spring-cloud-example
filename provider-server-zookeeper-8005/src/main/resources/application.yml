@@ -1,0 +1,14 @@
+server:
+  port: 8003
+
+spring:
+  application:
+    name: provider-server
+  cloud:
+    zookeeper:
+      connect-string: 127.0.0.1:2181
+
+info:
+  app.name: ${spring.application.name}
+  build.artifactId: ${project.artifactId}
+  build.version: ${project.version}

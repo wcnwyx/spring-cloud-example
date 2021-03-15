@@ -19,6 +19,7 @@
         <module>zuul-server-9002</module>
         <module>eureka-server-single-7001</module>
         <module>eureka-server-beijing-zone2-7004</module>
+        <module>provider-server-zookeeper-8005</module>
     </modules>
 
 <!--    <parent>-->
