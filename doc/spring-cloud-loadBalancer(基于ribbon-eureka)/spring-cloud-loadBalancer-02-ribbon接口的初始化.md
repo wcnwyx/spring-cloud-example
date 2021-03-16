@@ -5,6 +5,7 @@ ribbon的使用需要有这几个基本的接口实现类（建议先看看ribbo
 4. IPing: 负载均衡器里检测服务列表是否存活的Ping
 5. ServerList: 负载均衡器实现从动态愿获取服务列表的策略
 6. ServerListUpdater： 负载均衡器动态服务器列表更新的策略
+7. RetryHandler: 重试机制
 
 ##ribbon基础类在springCloud中的配置：
 下面代码是spring-cloud-netflix-ribbon-xxx.jar包里的配置类，定义了ribbon所需要的基本的类。  
