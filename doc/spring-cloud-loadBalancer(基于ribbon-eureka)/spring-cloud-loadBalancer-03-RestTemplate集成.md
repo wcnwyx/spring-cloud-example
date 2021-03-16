@@ -1,5 +1,106 @@
-##接口ClientHttpRequest、ClientHttpResponse、ClientHttpRequestFactory
-RestTemplate最终的执行时通过创建ClientHttpRequest来进行执行的，所以先看下这三个接口。  
+RestTemplate通过@LoadBalance注解来开启的负载均衡功能，这一篇来梳理下RestTemplate是如何集成的负载均衡ribbon的。  
+从第一篇可以知道负载均衡的调用时通过LoadBalancerClient.execute(String serviceId, LoadBalancerRequest<T> request)来完成调用的。  
+下面看看RestTemplate和LoadBalancerClient如何关联上。  
+
+##1： @LoadBalanced何时何地对RestTemplate做了什么？
+
+###1.1： @LoadBalanced注解源码：
+```java
+/**
+ * Annotation to mark a RestTemplate bean to be configured to use a LoadBalancerClient.
+ * 注解标记一个RestTemplate，配置其使用一个LoadBalancerClient
+ * 注意该注解被@Qualifier标注了
+ */
+@Target({ ElementType.FIELD, ElementType.PARAMETER, ElementType.METHOD })
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Inherited
+@Qualifier
+public @interface LoadBalanced {
+
+}
+```
+
+###1.2： LoadBalancerAutoConfiguration配置类
+```java
+@Configuration
+@ConditionalOnClass(RestTemplate.class)
+@ConditionalOnBean(LoadBalancerClient.class)
+@EnableConfigurationProperties(LoadBalancerRetryProperties.class)
+public class LoadBalancerAutoConfiguration {
+
+    //所有标注有@LoadBalanced注解的RestTemplate都将被注入到此List中
+	@LoadBalanced
+	@Autowired(required = false)
+	private List<RestTemplate> restTemplates = Collections.emptyList();
+
+    //SmartInitializingSingleton会在bean初始化完成后进行调用
+	@Bean
+	public SmartInitializingSingleton loadBalancedRestTemplateInitializerDeprecated(
+			final ObjectProvider<List<RestTemplateCustomizer>> restTemplateCustomizers) {
+		return () -> restTemplateCustomizers.ifAvailable(customizers -> {
+            //将标注有@LoadBalanced的所有RestTemplate都经过RestTemplateCustomizer处理
+			for (RestTemplate restTemplate : LoadBalancerAutoConfiguration.this.restTemplates) {
+				for (RestTemplateCustomizer customizer : customizers) {
+					customizer.customize(restTemplate);
+				}
+			}
+		});
+	}
+
+	@Bean
+	@ConditionalOnMissingBean
+	public LoadBalancerRequestFactory loadBalancerRequestFactory(
+			LoadBalancerClient loadBalancerClient) {
+        //LoadBalancerRequestFactory就是用来创建LoadBalancerRequest的。
+        //LoadBalancerRequestFactory中还放进去了一个LoadBalancerClient。
+        //LoadBalancerRequest和LoadBalancerClient就是最开始看的核心部分喽。
+		return new LoadBalancerRequestFactory(loadBalancerClient, this.transformers);
+	}
+
+	@Configuration
+	@ConditionalOnMissingClass("org.springframework.retry.support.RetryTemplate")
+	static class LoadBalancerInterceptorConfig {
+
+		@Bean
+		public LoadBalancerInterceptor ribbonInterceptor(
+				LoadBalancerClient loadBalancerClient,
+				LoadBalancerRequestFactory requestFactory) {
+            //创建一个LoadBalancerInterceptor，用于设置到RestTemplate中，并传入了一个LoadBalancerRequestFactory
+			return new LoadBalancerInterceptor(loadBalancerClient, requestFactory);
+		}
+
+		@Bean
+		@ConditionalOnMissingBean
+		public RestTemplateCustomizer restTemplateCustomizer(
+				final LoadBalancerInterceptor loadBalancerInterceptor) {
+			return restTemplate -> {
+                //将LoadBalancerInterceptor设置到RestTemplate里
+				List<ClientHttpRequestInterceptor> list = new ArrayList<>(
+						restTemplate.getInterceptors());
+				list.add(loadBalancerInterceptor);
+				restTemplate.setInterceptors(list);
+			};
+		}
+
+	}
+
+}
+```
+
+通过上面的代码可以看出在配置类LoadBalancerAutoConfiguration中做了一下操作：  
+1. 给每个标注有@LoadBalanced注解的RestTemplate的interceptors集合中添加了一个LoadBalancerInterceptor。
+2. LoadBalancerInterceptor中持有了一个LoadBalancerRequestFactory，  
+3. LoadBalancerRequestFactory可以用来创建LoadBalancerRequest，  
+4. LoadBalancerRequestFactory中又持有了一个LoadBalancerClient，
+这样子其实在LoadBalancerInterceptor中就可以获取到LoadBalancerRequest和LoadBalancerClient，那么就可以调用LoadBalancerClient.execute(String serviceId, LoadBalancerRequest<T> request)方法了。  
+到这里RestTemplate就和负载均衡LoadBalancerClient关联上了。  
+
+
+##2： RestTemplate代码梳理
+
+###2.1： 接口ClientHttpRequest、ClientHttpResponse、ClientHttpRequestFactory
+RestTemplate最终的执行时是通过不同的ClientHttpRequestFactory来创建出ClientHttpRequest来进行执行的，所以先看下这三个接口。  
 ```java
 /**
  * Represents a client-side HTTP request.
@@ -81,10 +182,7 @@ public interface ClientHttpRequestFactory {
 }
 ```
 
-
-##RestTemplate的执行流程梳理
-
-###执行方法-RestTemplate.doExecute()
+###2.2： RestTemplate执行方法-doExecute()
 ```java
 public class RestTemplate extends InterceptingHttpAccessor implements RestOperations {
     
@@ -119,7 +217,6 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 }
 ```
 
-###InterceptingHttpAccessor.getRequestFactory()
 ```java
 public abstract class InterceptingHttpAccessor extends HttpAccessor {
 
@@ -127,9 +224,14 @@ public abstract class InterceptingHttpAccessor extends HttpAccessor {
 
     @Nullable
     private volatile ClientHttpRequestFactory interceptingRequestFactory;
+
+    public List<ClientHttpRequestInterceptor> getInterceptors() {
+        return this.interceptors;
+    }
     
     @Override
     public ClientHttpRequestFactory getRequestFactory() {
+        //interceptors被配置类加入了一个LoadBalancerInterceptor，所以不为空
         List<ClientHttpRequestInterceptor> interceptors = getInterceptors();
         if (!CollectionUtils.isEmpty(interceptors)) {
             ClientHttpRequestFactory factory = this.interceptingRequestFactory;
@@ -146,7 +248,6 @@ public abstract class InterceptingHttpAccessor extends HttpAccessor {
 }
 ```
 
-###HttpAccessor.createRequest()
 ```java
 public abstract class HttpAccessor {
     /**
@@ -159,5 +260,187 @@ public abstract class HttpAccessor {
         }
         return request;
     }
+}
+```
+
+通过TestTemplate的逻辑梳理，可以知道RestTemplate通过@LoadBalanced集成ribbon后，ClientHttpRequestFactory使用的实现类是InterceptingClientHttpRequestFactory  
+ClientHttpRequest使用的实现类是InterceptingClientHttpRequest
+
+###2.3： InterceptingClientHttpRequest的执行过程
+InterceptingClientHttpRequest继承于AbstractBufferingClientHttpRequest再继承于AbstractClientHttpRequest，  
+所以现从顶级父类AbstractClientHttpRequest看接口ClientHttpRequest.execute()方法的实现逻辑。   
+```java
+/**
+ * Abstract base for {@link ClientHttpRequest} that makes sure that headers
+ * and body are not written multiple times.
+ *
+ * ClientHttpRequst的抽象基础类，确保headers和body不被多次写入。
+ */
+public abstract class AbstractClientHttpRequest implements ClientHttpRequest {
+
+	private final HttpHeaders headers = new HttpHeaders();
+
+	private boolean executed = false;
+
+
+	@Override
+	public final ClientHttpResponse execute() throws IOException {
+		assertNotExecuted();
+		ClientHttpResponse result = executeInternal(this.headers);
+		this.executed = true;
+		return result;
+	}
+
+    /**
+     * Assert that this request has not been {@linkplain #execute() executed} yet.
+     * 确保execute不被多次执行
+     */
+    protected void assertNotExecuted() {
+        Assert.state(!this.executed, "ClientHttpRequest already executed");
+    }
+
+	/**
+	 * Abstract template method that writes the given headers and content to the HTTP request.
+	 * 抽象模板方法，将给定的headers和content写入Http请求
+	 */
+	protected abstract ClientHttpResponse executeInternal(HttpHeaders headers) throws IOException;
+
+}
+
+
+/**
+ * Base implementation of {@link ClientHttpRequest} that buffers output
+ * in a byte array before sending it over the wire.
+ *
+ * 
+ */
+abstract class AbstractBufferingClientHttpRequest extends AbstractClientHttpRequest {
+
+	private ByteArrayOutputStream bufferedOutput = new ByteArrayOutputStream(1024);
+
+
+	@Override
+	protected ClientHttpResponse executeInternal(HttpHeaders headers) throws IOException {
+		byte[] bytes = this.bufferedOutput.toByteArray();
+		if (headers.getContentLength() < 0) {
+			headers.setContentLength(bytes.length);
+		}
+		ClientHttpResponse result = executeInternal(headers, bytes);
+		this.bufferedOutput = new ByteArrayOutputStream(0);
+		return result;
+	}
+
+	/**
+	 * Abstract template method that writes the given headers and content to the HTTP request.
+	 * 抽象模板方法，将给定的headers和content写入Http请求
+	 */
+	protected abstract ClientHttpResponse executeInternal(HttpHeaders headers, byte[] bufferedOutput)
+			throws IOException;
+
+
+}
+
+
+/**
+ * Wrapper for a {@link ClientHttpRequest} that has support for {@link ClientHttpRequestInterceptor ClientHttpRequest} that has support for {@link ClientHttpRequestInterceptors}.
+ *
+ * 
+ */
+class InterceptingClientHttpRequest extends AbstractBufferingClientHttpRequest {
+
+	private final ClientHttpRequestFactory requestFactory;
+
+	private final List<ClientHttpRequestInterceptor> interceptors;
+
+	private HttpMethod method;
+
+	private URI uri;
+
+
+	protected InterceptingClientHttpRequest(ClientHttpRequestFactory requestFactory,
+			List<ClientHttpRequestInterceptor> interceptors, URI uri, HttpMethod method) {
+
+		this.requestFactory = requestFactory;
+		this.interceptors = interceptors;
+		this.method = method;
+		this.uri = uri;
+	}
+
+
+
+	@Override
+	protected final ClientHttpResponse executeInternal(HttpHeaders headers, byte[] bufferedOutput) throws IOException {
+		InterceptingRequestExecution requestExecution = new InterceptingRequestExecution();
+		return requestExecution.execute(this, bufferedOutput);
+	}
+
+
+	private class InterceptingRequestExecution implements ClientHttpRequestExecution {
+
+		private final Iterator<ClientHttpRequestInterceptor> iterator;
+
+		public InterceptingRequestExecution() {
+			this.iterator = interceptors.iterator();
+		}
+
+		@Override
+		public ClientHttpResponse execute(HttpRequest request, byte[] body) throws IOException {
+			if (this.iterator.hasNext()) {
+				ClientHttpRequestInterceptor nextInterceptor = this.iterator.next();
+				return nextInterceptor.intercept(request, body, this);
+			}
+			else {
+				HttpMethod method = request.getMethod();
+				Assert.state(method != null, "No standard HTTP method");
+				ClientHttpRequest delegate = requestFactory.createRequest(request.getURI(), method);
+				request.getHeaders().forEach((key, value) -> delegate.getHeaders().addAll(key, value));
+				if (body.length > 0) {
+					if (delegate instanceof StreamingHttpOutputMessage) {
+						StreamingHttpOutputMessage streamingOutputMessage = (StreamingHttpOutputMessage) delegate;
+						streamingOutputMessage.setBody(outputStream -> StreamUtils.copy(body, outputStream));
+					}
+					else {
+						StreamUtils.copy(body, delegate.getBody());
+					}
+				}
+				return delegate.execute();
+			}
+		}
+	}
+
+}
+```
+
+
+```java
+public class LoadBalancerInterceptor implements ClientHttpRequestInterceptor {
+
+	private LoadBalancerClient loadBalancer;
+
+	private LoadBalancerRequestFactory requestFactory;
+
+    //配置类LoadBalancerAutoConfiguration中初始化该类，并将LoadBalancerClient和LoadBalancerRequestFactory传入
+	public LoadBalancerInterceptor(LoadBalancerClient loadBalancer,
+			LoadBalancerRequestFactory requestFactory) {
+		this.loadBalancer = loadBalancer;
+		this.requestFactory = requestFactory;
+	}
+
+	public LoadBalancerInterceptor(LoadBalancerClient loadBalancer) {
+		// for backwards compatibility
+		this(loadBalancer, new LoadBalancerRequestFactory(loadBalancer));
+	}
+
+	@Override
+	public ClientHttpResponse intercept(final HttpRequest request, final byte[] body,
+			final ClientHttpRequestExecution execution) throws IOException {
+		final URI originalUri = request.getURI();
+		String serviceName = originalUri.getHost();
+		Assert.state(serviceName != null,
+				"Request URI does not contain a valid hostname: " + originalUri);
+		return this.loadBalancer.execute(serviceName,
+				this.requestFactory.createRequest(request, body, execution));
+	}
+
 }
 ```
