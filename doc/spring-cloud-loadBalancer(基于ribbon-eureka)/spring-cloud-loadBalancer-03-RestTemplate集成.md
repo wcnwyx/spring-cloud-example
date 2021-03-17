@@ -52,9 +52,9 @@ public class LoadBalancerAutoConfiguration {
 	@ConditionalOnMissingBean
 	public LoadBalancerRequestFactory loadBalancerRequestFactory(
 			LoadBalancerClient loadBalancerClient) {
-        //LoadBalancerRequestFactory就是用来创建LoadBalancerRequest的。
-        //LoadBalancerRequestFactory中还放进去了一个LoadBalancerClient。
-        //LoadBalancerRequest和LoadBalancerClient就是最开始看的核心部分喽。
+		//LoadBalancerRequestFactory就是用来创建LoadBalancerRequest的。
+		//LoadBalancerRequestFactory中还放进去了一个LoadBalancerClient。
+		//LoadBalancerRequest和LoadBalancerClient就是最开始看的核心部分喽。
 		return new LoadBalancerRequestFactory(loadBalancerClient, this.transformers);
 	}
 
@@ -101,6 +101,8 @@ public class LoadBalancerAutoConfiguration {
 
 ###2.1： 接口ClientHttpRequest、ClientHttpResponse、ClientHttpRequestFactory
 RestTemplate最终的执行时是通过不同的ClientHttpRequestFactory来创建出ClientHttpRequest来进行执行的，所以先看下这三个接口。  
+
+接口ClientHttpRequest，表示一个客户端方的Http请求
 ```java
 /**
  * Represents a client-side HTTP request.
@@ -121,6 +123,7 @@ public interface ClientHttpRequest extends HttpRequest, HttpOutputMessage {
 }
 ```
 
+接口ClientHttpResponse，表示一个客户端方的HTTP响应
 ```java
 /**
  * Represents a client-side HTTP response.
@@ -162,6 +165,7 @@ public interface ClientHttpResponse extends HttpInputMessage, Closeable {
 }
 ```
 
+接口ClientHttpRequestFactory，用于生成ClientHttpRequest的工厂
 ```java
 /**
  * Factory for {@link ClientHttpRequest} objects.
@@ -217,6 +221,7 @@ public class RestTemplate extends InterceptingHttpAccessor implements RestOperat
 }
 ```
 
+父类InterceptingHttpAccessor  
 ```java
 public abstract class InterceptingHttpAccessor extends HttpAccessor {
 
@@ -248,6 +253,7 @@ public abstract class InterceptingHttpAccessor extends HttpAccessor {
 }
 ```
 
+父类HttpAccessor  
 ```java
 public abstract class HttpAccessor {
     /**
@@ -312,7 +318,7 @@ public abstract class AbstractClientHttpRequest implements ClientHttpRequest {
  * Base implementation of {@link ClientHttpRequest} that buffers output
  * in a byte array before sending it over the wire.
  *
- * 
+ * ClientHttpRequest的基础实现，在发送output之前缓存到一个byte数组里。
  */
 abstract class AbstractBufferingClientHttpRequest extends AbstractClientHttpRequest {
 
@@ -344,7 +350,7 @@ abstract class AbstractBufferingClientHttpRequest extends AbstractClientHttpRequ
 /**
  * Wrapper for a {@link ClientHttpRequest} that has support for {@link ClientHttpRequestInterceptor ClientHttpRequest} that has support for {@link ClientHttpRequestInterceptors}.
  *
- * 
+ * 支持ClientHttpRequestInterceptor的一个ClientHttpRequest的封装类
  */
 class InterceptingClientHttpRequest extends AbstractBufferingClientHttpRequest {
 
@@ -370,6 +376,7 @@ class InterceptingClientHttpRequest extends AbstractBufferingClientHttpRequest {
 
 	@Override
 	protected final ClientHttpResponse executeInternal(HttpHeaders headers, byte[] bufferedOutput) throws IOException {
+        //new出来一个执行器来执行
 		InterceptingRequestExecution requestExecution = new InterceptingRequestExecution();
 		return requestExecution.execute(this, bufferedOutput);
 	}
@@ -386,6 +393,9 @@ class InterceptingClientHttpRequest extends AbstractBufferingClientHttpRequest {
 		@Override
 		public ClientHttpResponse execute(HttpRequest request, byte[] body) throws IOException {
 			if (this.iterator.hasNext()) {
+                //循环调用拦截器处理
+                //这里就用到了ClientHttpRequestInterceptor，里面封装了LoadBalancerClient和LoadBalancerRequestFactory
+                //就可以调用负载均衡器的执行方法了
 				ClientHttpRequestInterceptor nextInterceptor = this.iterator.next();
 				return nextInterceptor.intercept(request, body, this);
 			}
@@ -411,7 +421,44 @@ class InterceptingClientHttpRequest extends AbstractBufferingClientHttpRequest {
 }
 ```
 
+###2.4 ClientHttpRequestInterceptor
+ClientHttpRequest的拦截器
+```java
+/**
+ * Intercepts client-side HTTP requests. Implementations of this interface can be
+ * {@linkplain org.springframework.web.client.RestTemplate#setInterceptors registered}
+ * with the {@link org.springframework.web.client.RestTemplate RestTemplate},
+ * as to modify the outgoing {@link ClientHttpRequest} and/or the incoming
+ * {@link ClientHttpResponse}.
+ * 
+ * 拦截客户端的HTTP请求（ClientHttpRequest）。
+ * 该接口的实现可以通过RestTemplate.setInterceptors() 方法注册到restTemplate中，
+ * 来修改传出的ClientHttpRequest或传入的ClientHttpResponse
+ *
+ * <p>The main entry point for interceptors is
+ * {@link #intercept(HttpRequest, byte[], ClientHttpRequestExecution)}.
+ *
+ * 拦截器的主要入口是intercept方法
+ */
+@FunctionalInterface
+public interface ClientHttpRequestInterceptor {
 
+	/**
+	 * Intercept the given request, and return a response. The given
+	 * {@link ClientHttpRequestExecution} allows the interceptor to pass on the
+	 * request and response to the next entity in the chain.
+	 * 
+	 * 来接给定的request，并返回一个response。
+	 * 给定的ClientHttpRequestExecution允许拦截的请求和响应传递给链中的下一个实体。
+	 * 
+	 */
+	ClientHttpResponse intercept(HttpRequest request, byte[] body, ClientHttpRequestExecution execution)
+			throws IOException;
+
+}
+```
+
+具有负载均衡功能的拦截器实现类
 ```java
 public class LoadBalancerInterceptor implements ClientHttpRequestInterceptor {
 
@@ -438,9 +485,25 @@ public class LoadBalancerInterceptor implements ClientHttpRequestInterceptor {
 		String serviceName = originalUri.getHost();
 		Assert.state(serviceName != null,
 				"Request URI does not contain a valid hostname: " + originalUri);
+        //调用负载均衡器的方法
 		return this.loadBalancer.execute(serviceName,
 				this.requestFactory.createRequest(request, body, execution));
 	}
 
 }
 ```
+
+##总结：
+这里面有一些接口的名字比较像，所以看下来会有点乱，大概列一下这些接口及作用：
+1. LoadBalancerClient：负载均衡器，提供了execute执行方法
+2. LoadBalancerRequest： 负载均衡器封装的Request，在LoadBalancerClient.execute方法中使用，来具体执行请求操作。
+3. ClientHttpRequest、ClientHttpResponse： spring对客户端层面http进行了请求和响应的封装。
+    - InterceptingClientHttpRequest就是一个实现类，又有拦截器功能。
+4. ClientHttpRequestInterceptor ：针对ClientHttpRequest的一个拦截器
+    - LoadBalancerInterceptor 就是一个实现类，具有负载均衡功能。
+
+RestTemplate集成负载均衡的大概步骤：
+1. RestTemplate被@LoadBalanced注解来标注（具有@Qualifier特性）。
+2. LoadBalancerAutoConfiguration 配置类将标注有@LoadBalanced注解的RestTemplate添加拦截器（LoadBalancerInterceptor）。
+3. LoadBalancerInterceptor该拦截器中封装了LoadBalancerClient和LoadBalancerRequestFactory（生成LoadBalancerRequest）。
+4. RestTemplate执行过程中触发拦截器，调用LoadBalancerClient.execute方法来实现负载均衡的调用。
