@@ -24,20 +24,20 @@ eureka:
       shanghai-zone-1: http://eureka-server-shanghai-zone1-7001.com:7001/eureka/ #同一个zone里也可以配置多个，逗号分隔即可
       shanghai-zone-2: http://eureka-server-shanghai-zone2-7002.com:7002/eureka/
 
-feign:
-  hystrix:
-    enabled: true
+#feign:
+#  hystrix:
+#    enabled: true
 
 ##通过下面配置修改feign的负载策略
-provider-server:
-  ribbon:
-    NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RandomRule #配置规则 随机
-#   NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RoundRobinRule #配置规则 轮询
-#   NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RetryRule #配置规则 重试
-#   NFLoadBalancerRuleClassName: com.netflix.loadbalancer.WeightedResponseTimeRule #配置规则 响应时间权重
-#   NFLoadBalancerRuleClassName: com.netflix.loadbalancer.BestAvailableRule #配置规则 最空闲连接策略
-    ConnectTimeout: 500 #请求连接超时时间
-    ReadTimeout: 1000 #请求处理的超时时间
+#provider-server:
+#  ribbon:
+#    NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RandomRule #配置规则 随机
+##   NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RoundRobinRule #配置规则 轮询
+##   NFLoadBalancerRuleClassName: com.netflix.loadbalancer.RetryRule #配置规则 重试
+##   NFLoadBalancerRuleClassName: com.netflix.loadbalancer.WeightedResponseTimeRule #配置规则 响应时间权重
+##   NFLoadBalancerRuleClassName: com.netflix.loadbalancer.BestAvailableRule #配置规则 最空闲连接策略
+#    ConnectTimeout: 500 #请求连接超时时间
+#    ReadTimeout: 1000 #请求处理的超时时间
 
 info:
   app.name: ${spring.application.name}
