@@ -107,6 +107,22 @@
   |--format|使用go模板打印信息|
   |--last , -n|显示n个容器（包括所有状态的）|
   |--latest , -l|显示最后创建的容器（包含所有状态的）|
-  |||
-  |||
-  |||
+  |--no-trunc|不截断输出|
+  |--quiet , -q|只显示容器ID|
+  |--size , -s|显示总文件大小|
+  
+- ###docker create
+  描述：创建一个新的容器（并不启动容器）  
+  用法：`docker create [OPTIONS] IMAGE [COMMAND] [ARG...]`  
+  OPTIONS：该指令可选项多且重要，后续单独一篇写，带上例子。
+
+- ###docker start
+  描述：启动一个或多个已停止停止的容器  
+  用法：`docker start [OPTIONS] CONTAINER [CONTAINER...]`  
+  OPTIONS：
+
+  |名称，速记|描述|
+  |----|----|
+  |--attach , -a|显示所有容器（默认只显示运行中的）|
+  |--detach-keys|根据提供的条件过滤输出|
+  |--interactive , -i|使用go模板打印信息|
