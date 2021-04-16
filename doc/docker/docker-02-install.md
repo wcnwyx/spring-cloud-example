@@ -4,7 +4,7 @@
 To get started with Docker Engine on CentOS, make sure you
 [meet the prerequisites](#prerequisites), then
 [install Docker](#installation-methods).
->要开始在CentOS上使用Docker引擎，请确保满足先觉条件，然后安装Docker。
+>要开始在CentOS上使用Docker引擎，请确保满足先决条件，然后安装Docker。
 
 ## Prerequisites
 

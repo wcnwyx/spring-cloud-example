@@ -15,8 +15,7 @@ This page describes the commands you can use in a `Dockerfile`. When you are
 done reading this page, refer to the [`Dockerfile` Best
 Practices](https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/) for a tip-oriented guide.
 > 本页介绍可在Dockerfile中使用的命令。阅读完本页后，
-> 请参阅[`Dockerfile` Best
-Practices](https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/)以获取面向提示的指南
+> 请参阅 [`Dockerfile` Best Practices](https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/) 以获取面向提示的指南
 
 ## Usage
 
@@ -64,8 +63,7 @@ the context directory.  For information about how to [create a `.dockerignore`
 file](#dockerignore-file) see the documentation on this page.
 > 要在生成上下文中使用文件，Dockerfile引用指令中指定的文件，例如，`COPY`指令。
 > 要提高生成的性能，请通过向上下文目录添加`.dockerginore`文件来排除文件和目录。
-> 有关如何[创建 `.dockerignore`
-文件](#dockerignore-file)的信息，请参阅本页上的文档。
+> 有关如何[创建 `.dockerignore`文件](#dockerignore-file) 的信息，请参阅本页上的文档。
 
 Traditionally, the `Dockerfile` is called `Dockerfile` and located in the root
 of the context. You use the `-f` flag with `docker build` to point to a Dockerfile
@@ -109,15 +107,21 @@ committing the result of each instruction
 to a new image if necessary, before finally outputting the ID of your
 new image. The Docker daemon will automatically clean up the context you
 sent.
+> Docker守护进程逐个运行`Dockerfile`中的指令，如果需要，将每条指令的结果提交给新镜像，最后输出新镜像的ID。
+> Docker守护进程将自动清理你发送的上下文。
 
 Note that each instruction is run independently, and causes a new image
 to be created - so `RUN cd /tmp` will not have any effect on the next
 instructions.
+> 请注意，每条指令都是独立运行的，并会创建一个新的镜像，所以`RUN cd/tmp`不会对下一个指令产生任何影响。
 
 Whenever possible, Docker will re-use the intermediate images (cache),
 to accelerate the `docker build` process significantly. This is indicated by
 the `Using cache` message in the console output.
-(For more information, see the [`Dockerfile` best practices guide](https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/):
+(For more information, see the [`Dockerfile` best practices guide](https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/) :
+> 只要有可能，Docker将重用中间映像（cache），以显著加快`docker build`构建过程。
+> 这由控制台输出中的“Using cache”消息表示。
+> 更多的详情，请看  [`Dockerfile` best practices guide](https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/)
 
 ```bash
 $ docker build -t svendowideit/ambassador .
@@ -143,9 +147,14 @@ was loaded with `docker load`. If you wish to use build cache of a specific
 image you can specify it with `--cache-from` option. Images specified with
 `--cache-from` do not need to have a parent chain and may be pulled from other
 registries.
+> 生成缓存仅用于具有本地父链的映像。
+> 这意味着这些映像是由以前的构建创建的，或者整个映像链是用“docker load”加载的。
+> 如果要使用特定映像的生成缓存，可以使用“-cache from”选项指定它。
+> 用“-cache from”指定的映像不需要父链，可以从其它registries中提取。
 
 When you're done with your build, you're ready to look into [*Pushing a
 repository to its registry*](https://docs.docker.com/engine/tutorials/dockerrepos/#/contributing-to-docker-hub).
+> 当你完成了你的构建，你已经准备好研究[*Pushing a repository to its registry*](https://docs.docker.com/engine/tutorials/dockerrepos/#/contributing-to-docker-hub)
 
 
 ## BuildKit
@@ -154,17 +163,27 @@ Starting with version 18.09, Docker supports a new backend for executing your
 builds that is provided by the [moby/buildkit](https://github.com/moby/buildkit)
 project. The BuildKit backend provides many benefits compared to the old
 implementation. For example, BuildKit can:
+> 从 18.09 版本开始，Docker支持一个新的后端来执行你的构件，由 [moby/buildkit](https://github.com/moby/buildkit) 提供的项目。
+> 与旧的实现相比，BuildKit后端提供了许多好处。 BuildKit 可以：
 
 - Detect and skip executing unused build stages
+  > 检测并跳过未使用的生成阶段
 - Parallelize building independent build stages
+  > 并行化独立构建阶段
 - Incrementally transfer only the changed files in your build context between builds
+  > 在构建之间增量地仅传输构建上下文中更改的文件
 - Detect and skip transferring unused files in your build context
+  > 检测并跳过在构建上下文中传输未使用的文件
 - Use external Dockerfile implementations with many new features
+  > 使用具有许多新功能的外部Dockerfile实现
 - Avoid side-effects with rest of the API (intermediate images and containers)
+  > 使用API的其余部分（中间图像和容器）避免副作用
 - Prioritize your build cache for automatic pruning
+  > 为自动修剪设置生成缓存的优先级
 
 To use the BuildKit backend, you need to set an environment variable
 `DOCKER_BUILDKIT=1` on the CLI before invoking `docker build`.
+> 要使用BuildKit后端，需要在调用`docker build`之前, 在CLI上设置一个环境变量`DOCKER_BUILDKIT=1` 。
 
 To learn about the experimental Dockerfile syntax available to BuildKit-based
 builds [refer to the documentation in the BuildKit repository](https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/experimental.md).
@@ -172,6 +191,7 @@ builds [refer to the documentation in the BuildKit repository](https://github.co
 ## Format
 
 Here is the format of the `Dockerfile`:
+> 这是 `Dockerfile` 的格式：
 
 ```dockerfile
 # Comment
@@ -180,6 +200,7 @@ INSTRUCTION arguments
 
 The instruction is not case-sensitive. However, convention is for them to
 be UPPERCASE to distinguish them from arguments more easily.
+> 指令不区分大小写。然而，惯例使用大写字母，以便更容易地将它们与参数区分开来。
 
 
 Docker runs instructions in a `Dockerfile` in order. A `Dockerfile` **must
@@ -189,10 +210,16 @@ directives](#parser-directives), [comments](#format), and globally scoped
 Image*](https://docs.docker.com/glossary/#parent_image) from which you are
 building. `FROM` may only be preceded by one or more `ARG` instructions, which
 declare arguments that are used in `FROM` lines in the `Dockerfile`.
+> Docker 顺序的执行`Dockerfile`中的指令。 一个`Dockerfile`必须以一个`FROM`指令开始。
+> 这可能在解析器指令、注释和全局作用域参数之后。
+> `FROM`指令指定要从哪个 [父映像](https://docs.docker.com/glossary/#parent_image) 构建。
+> `FROM'前面只能有一个或多个'ARG'指令，这些指令声明在'Dockerfile'的'FROM'行中使用的参数。
 
 Docker treats lines that *begin* with `#` as a comment, unless the line is
 a valid [parser directive](#parser-directives). A `#` marker anywhere
 else in a line is treated as an argument. This allows statements like:
+> Docker将以#开头的行视为注释，除非该行是有效的解析器指令。
+> 行中其他任何位置的#标记都被视为参数。这允许这样的语句:
 
 ```dockerfile
 # Comment
@@ -202,6 +229,7 @@ RUN echo 'we are running some # of cool things'
 Comment lines are removed before the Dockerfile instructions are executed, which
 means that the comment in the following example is not handled by the shell
 executing the `echo` command, and both examples below are equivalent:
+> 注释行在Dockerfile指令执行之前被删除，这意味着下面示例中的注释不是由执行echo命令的shell处理的，下面两个示例是等效的:
 
 ```dockerfile
 RUN echo hello \
@@ -215,13 +243,17 @@ world
 ```
 
 Line continuation characters are not supported in comments.
+> 注释中不支持行连续字符。
 
 > **Note on whitespace**
+> **关于空格的注意**
 >
 > For backward compatibility, leading whitespace before comments (`#`) and
 > instructions (such as `RUN`) are ignored, but discouraged. Leading whitespace
 > is not preserved in these cases, and the following examples are therefore
 > equivalent:
+> 为了向后兼容，注释（`#`）和指令（如`RUN`）之前的空格将被忽略，但不鼓励这样做。
+> 在这些情况下不保留最前面的空格，因此下面的示例是等效的：
 >
 > ```dockerfile
 >         # this is a comment-line
@@ -238,6 +270,7 @@ Line continuation characters are not supported in comments.
 > Note however, that whitespace in instruction _arguments_, such as the commands
 > following `RUN`, are preserved, so the following example prints `    hello    world`
 > with leading whitespace as specified:
+> 但是请注意，指令 _参数_ 中的空格（例如`RUN`后面的命令）是保留的，因此下面的示例按指定的前导空格打印`    hello    world` :
 >
 > ```dockerfile
 > RUN echo "\
@@ -246,27 +279,38 @@ Line continuation characters are not supported in comments.
 > ```
 
 ## Parser directives
+> 分析器指令
 
 Parser directives are optional, and affect the way in which subsequent lines
 in a `Dockerfile` are handled. Parser directives do not add layers to the build,
 and will not be shown as a build step. Parser directives are written as a
 special type of comment in the form `# directive=value`. A single directive
 may only be used once.
+> 解析器指令是可选的，并影响Dockerfile中后续行的处理方式。
+> 解析器指令不会将层添加到构建中，也不会显示为构建步骤。
+> 解析器指令以`# directive=value`的形式作为特殊类型的注释编写。单个指令只能使用一次。
 
 Once a comment, empty line or builder instruction has been processed, Docker
 no longer looks for parser directives. Instead it treats anything formatted
 as a parser directive as a comment and does not attempt to validate if it might
 be a parser directive. Therefore, all parser directives must be at the very
 top of a `Dockerfile`.
+> 一旦处理完注释、空行或构建器指令后，Docker将不再查找解析器指令。
+> 相反，它将任何格式化为解析器指令的内容视为注释，并且不尝试验证它是否可能是解析器指令。
+>因此，所有解析器指令必须位于一个`Dockerfile`的最顶层。
 
 Parser directives are not case-sensitive. However, convention is for them to
 be lowercase. Convention is also to include a blank line following any
 parser directives. Line continuation characters are not supported in parser
 directives.
+> 解析器指令不区分大小写。但是，约定是小写的。
+> 约定还包括在任何解析器指令之后包含一个空行。解析器指令中不支持行连续字符。
 
 Due to these rules, the following examples are all invalid:
+> 根据这些规则，以下示例均无效：
 
 Invalid due to line continuation:
+> 由于行连续而无效：
 
 ```dockerfile
 # direc \
@@ -274,6 +318,7 @@ tive=value
 ```
 
 Invalid due to appearing twice:
+> 因出现两次而无效：
 
 ```dockerfile
 # directive=value1
@@ -283,6 +328,7 @@ FROM ImageName
 ```
 
 Treated as a comment due to appearing after a builder instruction:
+> 由于出现在构建器指令之后而被视为注释：
 
 ```dockerfile
 FROM ImageName
@@ -291,6 +337,7 @@ FROM ImageName
 
 Treated as a comment due to appearing after a comment which is not a parser
 directive:
+> 由于出现在不是解析器指令的注释之后而被视为注释：
 
 ```dockerfile
 # About my dockerfile
@@ -301,6 +348,7 @@ FROM ImageName
 The unknown directive is treated as a comment due to not being recognized. In
 addition, the known directive is treated as a comment due to appearing after
 a comment which is not a parser directive.
+> 由于未被识别，未知指令被视为注释。此外，由于出现在不是解析器指令的注释之后，因此已知指令被视为注释。
 
 ```dockerfile
 # unknowndirective=value
@@ -309,6 +357,7 @@ a comment which is not a parser directive.
 
 Non line-breaking whitespace is permitted in a parser directive. Hence, the
 following lines are all treated identically:
+> 解析器指令中允许使用非换行空格。因此，以下各行的处理方式相同：
 
 ```dockerfile
 #directive=value
@@ -319,6 +368,7 @@ following lines are all treated identically:
 ```
 
 The following parser directives are supported:
+> 支持以下解析器指令：
 
 - `syntax`
 - `escape`
@@ -340,26 +390,37 @@ For example:
 ```
 
 This feature is only enabled if the [BuildKit](#buildkit) backend is used.
+> 此功能仅在使用 [BuildKit](#buildkit) 后端时启用。
 
 The syntax directive defines the location of the Dockerfile builder that is used for
 building the current Dockerfile. The BuildKit backend allows to seamlessly use
 external implementations of builders that are distributed as Docker images and
 execute inside a container sandbox environment.
+> syntax指令定义用于生成当前Dockerfile的Dockerfile生成器的位置。
+> BuildKit后端允许无缝地使用作为Docker映像分发并在容器沙盒环境中执行的构建器的外部实现。
 
 Custom Dockerfile implementation allows you to:
+> 自定义Dockerfile实现允许你：
 
 - Automatically get bugfixes without updating the daemon
+  > 在不更新守护进程的情况下自动获得错误修复
 - Make sure all users are using the same implementation to build your Dockerfile
+  > 确保所有用户都使用相同的实现来构建Dockerfile
 - Use the latest features without updating the daemon
+  > 使用最新功能而不更新守护程序
 - Try out new experimental or third-party features
+  > 尝试新的实验或第三方功能
 
 ### Official releases
 
 Docker distributes official versions of the images that can be used for building
 Dockerfiles under `docker/dockerfile` repository on Docker Hub. There are two
 channels where new images are released: stable and experimental.
+> Docker分发官方版本的镜像，这些镜像可用于在Docker Hub上的`docker/dockerfile`存储库下构建dockerfile。
+> 发布新镜像有两个通道：稳定和实验。
 
 Stable channel follows semantic versioning. For example:
+> 稳定通道遵循语义版本控制。例如：
 
 - `docker/dockerfile:1.0.0` - only allow immutable version `1.0.0`
 - `docker/dockerfile:1.0` - allow versions `1.0.*`
@@ -368,6 +429,7 @@ Stable channel follows semantic versioning. For example:
 
 The experimental channel uses incremental versioning with the major and minor
 component from the stable channel on the time of the release. For example:
+> 实验通道使用增量版本控制，主要和次要组件在发布时来自稳定通道。例如：
 
 - `docker/dockerfile:1.0.1-experimental` - only allow immutable version `1.0.1-experimental`
 - `docker/dockerfile:1.0-experimental` - latest experimental releases after `1.0`
@@ -378,9 +440,13 @@ bugfixes, you should use `docker/dockerfile:1.0`. If you want to benefit from
 experimental features, you should use the experimental channel. If you are using
 the experimental channel, newer releases may not be backwards compatible, so it
 is recommended to use an immutable full version variant.
+> 你应该选择一个最适合你需要的通道。如果您只想修复bug，应该使用`docker/dockerfile:1.0`。
+> 如果您想从实验特性中获益，应该使用实验通道。
+> 如果您使用的是实验频道，则较新的版本可能无法向后兼容，因此建议使用不可变的完整版本变体。
 
 For master builds and nightly feature releases refer to the description in
 [the source repository](https://github.com/moby/buildkit/blob/master/README.md).
+> 有关主版本和夜间功能发布，请参阅[the source repository](https://github.com/moby/buildkit/blob/master/README.md) 。
 
 ## escape
 
@@ -396,16 +462,20 @@ Or
 
 The `escape` directive sets the character used to escape characters in a
 `Dockerfile`. If not specified, the default escape character is `\`.
+> `escape`指令用于设置Dockerfile中的转义字符。如果未指定，则默认转义字符为 `\`。
 
 The escape character is used both to escape characters in a line, and to
 escape a newline. This allows a `Dockerfile` instruction to
 span multiple lines. Note that regardless of whether the `escape` parser
 directive is included in a `Dockerfile`, *escaping is not performed in
 a `RUN` command, except at the end of a line.*
+> 转义字符既用于转义行中的字符，也用于转义换行。这允许一个`Dockerfile`指令跨越多行。
+> 请注意，无论`escape`解析器指令是否包含在`Dockerfile`中，*转义都不会在`RUN`命令中执行，除非在行尾。*
 
 Setting the escape character to `` ` `` is especially useful on
 `Windows`, where `\` is the directory path separator. `` ` `` is consistent
 with [Windows PowerShell](https://technet.microsoft.com/en-us/library/hh847755.aspx).
+> 将转义字符设置为`` ` ``在Windows上特别有用，其中`\`是目录路径分隔符。
 
 Consider the following example which would fail in a non-obvious way on
 `Windows`. The second `\` at the end of the second line would be interpreted as an
@@ -414,6 +484,10 @@ Similarly, the `\` at the end of the third line would, assuming it was actually
 handled as an instruction, cause it be treated as a line continuation. The result
 of this dockerfile is that second and third lines are considered a single
 instruction:
+> 考虑下面的例子，它在`Windows`上以一种不明显的方式失败。
+> 第二行末尾的第二个`\`将被解释为换行符的转义，而不是从第一个`\`转义的目标。
+> 类似地，假设第三行末尾的`\`实际上是作为指令处理的，则会导致它被视为行的延续。
+> 此dockerfile的结果是第二行和第三行被视为一条指令：
 
 ```dockerfile
 FROM microsoft/nanoserver
@@ -437,9 +511,13 @@ One solution to the above would be to use `/` as the target of both the `COPY`
 instruction, and `dir`. However, this syntax is, at best, confusing as it is not
 natural for paths on `Windows`, and at worst, error prone as not all commands on
 `Windows` support `/` as the path separator.
+> 解决上述问题的一种方法是使用`/`作为`COPY`指令和`dir`的目标。
+> 然而，这种语法充其量是令人困惑的，因为它对于 `Windows` 上的路径来说并不自然，
+> 最坏的情况是，由于`Windows`上的命令并不都支持`/`作为路径分隔符，因此容易出错。
 
 By adding the `escape` parser directive, the following `Dockerfile` succeeds as
 expected with the use of natural platform semantics for file paths on `Windows`:
+> 通过添加`escape` 解析器指令，以下`Dockerfile`通过对`Windows`上的文件路径使用自然平台语义，如期成功：
 
 ```dockerfile
 # escape=`
