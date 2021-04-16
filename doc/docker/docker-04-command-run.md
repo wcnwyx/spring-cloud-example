@@ -355,16 +355,21 @@ For in-depth information about volumes, refer to [manage data in containers](htt
 
 
 ### Add bind mounts or volumes using the --mount flag
+> 使用--mount标志添加绑定 mounts 或 volumes
 
 The `--mount` flag allows you to mount volumes, host-directories and `tmpfs`
 mounts in a container.
+> `--mount`标志允许您在容器中装载卷、主机目录和tmpfs装载。
 
 The `--mount` flag supports most options that are supported by the `-v` or the
 `--volume` flag, but uses a different syntax. For in-depth information on the
 `--mount` flag, and a comparison between `--volume` and `--mount`, refer to
 the [service create command reference](service_create.md#add-bind-mounts-volumes-or-memory-filesystems).
+> `--mount`标志支持`-v`或`--volume`标志支持的大多数选项，但使用不同的语法。
+> 有关`--mount`标志的详细信息，以及`--volume`和`--mount`之间的比较，请参阅[service create command reference](https://github.com/docker/cli/blob/master/docs/reference/commandline/service_create.md#add-bind-mounts-volumes-or-memory-filesystems)
 
 Even though there is no plan to deprecate `--volume`, usage of `--mount` is recommended.
+> 即使没有计划否决`--volume`，也建议使用`--mount`。
 
 Examples:
 
@@ -468,6 +473,7 @@ USER=denis
 ### Set metadata on container (-l, --label, --label-file)
 
 A label is a `key=value` pair that applies metadata to a container. To label a container with two labels:
+> 一个标签（label）是将元数据据应用于容器的key=value对。用两个标签来标记容器：
 
 ```bash
 $ docker run -l my-label --label com.example.foo=bar ubuntu bash
@@ -475,14 +481,21 @@ $ docker run -l my-label --label com.example.foo=bar ubuntu bash
 
 The `my-label` key doesn't specify a value so the label defaults to an empty
 string (`""`). To add multiple labels, repeat the label flag (`-l` or `--label`).
+> `my-lable`这个key没有指定一个值，因此该标签默认空字符串（`"""`）。
+> 要添加多个标签，请重复标签标志（`-l` or `--label`）
 
 The `key=value` must be unique to avoid overwriting the label value. If you
 specify labels with identical keys but different values, each subsequent value
 overwrites the previous. Docker uses the last `key=value` you supply.
+> `key=value`必须是唯一的，以避免覆盖标签值。
+> 如果制定具有相同key但value不同的标签，则每个后续值都将覆盖上一个值。
+> Docker使用你最后提供的`key=value`。
 
 Use the `--label-file` flag to load multiple labels from a file. Delimit each
 label in the file with an EOL mark. The example below loads labels from a
 labels file in the current directory:
+> 使用`--label-file`标志从一个文件加载多个标签。 使用 EOL标记来分隔文件中的每个标签。
+> 下面的示例是从当前目录的标签文件来加载标签：
 
 ```bash
 $ docker run --label-file ./labels ubuntu bash
@@ -492,6 +505,8 @@ The label-file format is similar to the format for loading environment
 variables. (Unlike environment variables, labels are not visible to processes
 running inside a container.) The following example illustrates a label-file
 format:
+> 标签文件（label-file)的格式类似于加载环境变量的格式。（与环境变量不同的是，标签对于容器内的进程是不可以见的）
+> 下面的示例演示了标签文件的格式：
 
 ```console
 com.example.label1="a label"
@@ -502,15 +517,21 @@ com.example.label3
 ```
 
 You can load multiple label-files by supplying multiple  `--label-file` flags.
+> 通过提供多个`--label-file`标志来加载多个标签文件。
 
 For additional information on working with labels, see [*Labels - custom
 metadata in Docker*](https://docs.docker.com/config/labels-custom-metadata/) in
 the Docker User Guide.
+> 有关标签的更多详情请参考[*Labels - custom
+metadata in Docker*](https://docs.docker.com/config/labels-custom-metadata/)
 
 ### Connect a container to a network (--network)
+> 将容器连接到一个网络（--network）
 
 When you start a container use the `--network` flag to connect it to a network.
 This adds the `busybox` container to the `my-net` network.
+> 当你启动容器时，为了将它链接到一个网络，请使用`--network`标志启动。
+> 这将 `busybox`容器添加到 `my-net`网络。
 
 ```bash
 $ docker run -itd --network=my-net busybox
@@ -518,29 +539,39 @@ $ docker run -itd --network=my-net busybox
 
 You can also choose the IP addresses for the container with `--ip` and `--ip6`
 flags when you start the container on a user-defined network.
+> 在用户自定义的网络上启动一个容器时，你还可以通过`--ip` 和 `--ip6`的标志来选择容器的IP。
 
 ```bash
 $ docker run -itd --network=my-net --ip=10.10.9.75 busybox
 ```
 
 If you want to add a running container to a network use the `docker network connect` subcommand.
+> 如果你想将运行中的容器添加到网络中，请使用`docker network connect`子命令。
 
 You can connect multiple containers to the same network. Once connected, the
 containers can communicate easily need only another container's IP address
 or name. For `overlay` networks or custom plugins that support multi-host
 connectivity, containers connected to the same multi-host network but launched
 from different Engines can also communicate in this way.
+> 你可以将多个容器链接到相同的网络。
+> 一旦链接山，容器只需要另一个容器的IP地址或者名字可以方便的通信了。
+> 对于支持multi-host链接的`overlay`网络或自定义插件，链接到同一个multi-host的容器，
+> 但是从不同启动引擎启动的容器也可以通过这种方式来进行通信。
 
 > **Note**
 >
 > Service discovery is unavailable on the default bridge network. Containers can
 > communicate via their IP addresses by default. To communicate by name, they
 > must be linked.
+> 服务发现在默认的网桥(bridge)网络上不可用。默认情况下容器通过他们的IP地址通信。
+> 如果要通过名字来通信，它们必须连接起来。
 
 You can disconnect a container from a network using the `docker network
 disconnect` command.
+> 你可以使用`docker network disconnect`指令来容器和网络的链接。
 
 ### Mount volumes from container (--volumes-from)
+> 从容器挂载卷
 
 ```bash
 $ docker run --volumes-from 777f7dc92da7 --volumes-from ba8c0c54f0f2:ro -i -t ubuntu pwd
@@ -552,11 +583,17 @@ argument. The container ID may be optionally suffixed with `:ro` or `:rw` to
 mount the volumes in read-only or read-write mode, respectively. By default,
 the volumes are mounted in the same mode (read write or read only) as
 the reference container.
+> `--volumes-from`标志从引用容器装载所有定义的卷。容器可以通过重复`--volumes-from`参数来指定。
+> 容器id可以可选的加上`:ro`或者`:rw`后最，用来分别以只读(read-only)、读写(read-write)模式转载卷。
+> 默认情况下，卷将以和引用容器相同的模式（读写模式或者只读模式）来装载
 
 Labeling systems like SELinux require that proper labels are placed on volume
 content mounted into a container. Without a label, the security system might
 prevent the processes running inside the container from using the content. By
 default, Docker does not change the labels set by the OS.
+> 像 SELinux这样的标签系统要求在装入容器的卷内容上放置适当的标签。
+> 如果没有标签，安全系统可能会阻止容器内运行的进程使用内容。
+> 默认情况下，Docker不会改变操作系统设置的标签。
 
 To change the label in the container context, you can add either of two suffixes
 `:z` or `:Z` to the volume mount. These suffixes tell Docker to relabel file
@@ -565,12 +602,19 @@ share the volume content. As a result, Docker labels the content with a shared
 content label. Shared volume labels allow all containers to read/write content.
 The `Z` option tells Docker to label the content with a private unshared label.
 Only the current container can use a private volume.
+> 要改变容器上下文中的标签，你可以向卷装载添加两个后缀`:z` or `:Z`。
+> 这些后缀告诉Docker重新标记共享卷上的文件对象。
+> `z`选项告诉Docker两个容器共享卷内容。因此，Docker使用共享标签来标记内容。共享卷标志允许所有容器读/写内容。
+> `Z`选项告诉Docker使用私有的非共享标签来标记内容。只有当前容器才能使用专用卷。
 
 ### Attach to STDIN/STDOUT/STDERR (-a)
+> 链接到 STDIN/STDOUT/STDERR
 
 The `-a` flag tells `docker run` to bind to the container's `STDIN`, `STDOUT`
 or `STDERR`. This makes it possible to manipulate the output and input as
 needed.
+> `-a` 标志告诉 `docker run` 绑定到容器的 `STDIN`、 `STDOUT`或 `STDERR`。
+> 这使得可以根据需要操纵输出和输入。
 
 ```bash
 $ echo "test" | docker run -i -a stdin ubuntu cat -
@@ -578,6 +622,7 @@ $ echo "test" | docker run -i -a stdin ubuntu cat -
 
 This pipes data into a container and prints the container's ID by attaching
 only to the container's `STDIN`.
+> 这将数据管道化到容器中，并通过仅连接到容器的STDIN来打印容器的ID。
 
 ```bash
 $ docker run -a stderr ubuntu echo test
@@ -586,6 +631,8 @@ $ docker run -a stderr ubuntu echo test
 This isn't going to print anything unless there's an error because we've
 only attached to the `STDERR` of the container. The container's logs
 still store what's been written to `STDERR` and `STDOUT`.
+> 除非出现错误，否则不会打印任何内容，因为我们只链接到容器的`STDERR`。
+> 容器的日志仍然存储写入`STDERR` and `STDOUT`的内容。
 
 ```bash
 $ cat somefile | docker run -i -a stdin mybuilder dobuild
@@ -596,8 +643,12 @@ The container's ID will be printed after the build is done and the build
 logs could be retrieved using `docker logs`. This is
 useful if you need to pipe a file or something else into a container and
 retrieve the container's ID once the container has finished running.
+> 这就是将文件管道化到容器的方法。
+> 容器的ID将在构建完成后打印，并且可以使用`docker logs`检索构建日志。
+> 如果你需要将文件或者其他内容通过管道传输到容器，并在容器运行完成后检索容器的ID，那么这将非常有用。
 
 ### Add host device to container (--device)
+> 将主机设备添加到容器。
 
 ```bash
 $ docker run --device=/dev/sdc:/dev/xvdc \
@@ -614,11 +665,16 @@ It is often necessary to directly expose devices to a container. The `--device`
 option enables that. For example, a specific block storage device or loop
 device or audio device can be added to an otherwise unprivileged container
 (without the `--privileged` flag) and have the application directly access it.
+> 通常需要将设备直接暴露给容器。`--device`选项可以做到。
+> 例如，可以将特定的存储块设备、循环设备或者音频设备添加到一个没有特权的容器（没有 `--privileged`标志），
+> 并让应用程序直接使用它。
 
 By default, the container will be able to `read`, `write` and `mknod` these devices.
 This can be overridden using a third `:rwm` set of options to each `--device`
 flag. If the container is running in privileged mode, then the permissions specified
 will be ignored.
+> 默认情况下，容器将能够读、写和管理这些设备。可以使用三个`:rwm`选项集合来覆盖每个`--device`标志。
+> 如果容器以特权模式运行，则指定的权限将被忽略。
 
 ```bash
 $ docker run --device=/dev/sda:/dev/xvdc --rm -it ubuntu fdisk  /dev/xvdc
@@ -641,6 +697,8 @@ fdisk: unable to open /dev/xvdc: Operation not permitted
 >
 > The `--device` option cannot be safely used with ephemeral devices. Block devices
 > that may be removed should not be added to untrusted containers with `--device`.
+> `--device`选项不能安全的用于临时设备。
+> 不应该适用`--device`将可能被删除的块设备添加到不受信任的容器中。
 
 For Windows, the format of the string passed to the `--device` option is in
 the form of `--device=<IdType>/<Id>`. Beginning with Windows Server 2019
@@ -650,11 +708,16 @@ GUID](https://docs.microsoft.com/en-us/windows-hardware/drivers/install/overview
 Refer to the table defined in the [Windows container
 docs](https://docs.microsoft.com/en-us/virtualization/windowscontainers/deploy-containers/hardware-devices-in-containers)
 for a list of container-supported device interface class GUIDs.
+> 对于Windows，传递给`--device`选项的字符串格式为`--device=<IdType>/<Id>`。
+> 从Windows Server 2019 到 Windows 10 October 2018 Update,Windows仅支持类的IdType和作为设备接口类GUID的Id。
+> 有关容器支持的设备接口类guid的列表，请参阅Windows容器文档中定义的表。
 
 If this option is specified for a process-isolated Windows container, _all_
 devices that implement the requested device interface class GUID are made
 available in the container. For example, the command below makes all COM
 ports on the host visible in the container.
+> 如果为进程隔离的Windows容器指定了此选项，实现请求的设备接口类GUID的所有设备都在容器中可用。
+> 例如，下面的命令使主机上的所有COM端口在容器中可见。
 
 ```powershell
 PS C:\> docker run --device=class/86E0D1E0-8089-11D0-9CE4-08003E301F73 mcr.microsoft.com/windows/servercore:ltsc2019
@@ -668,13 +731,17 @@ PS C:\> docker run --device=class/86E0D1E0-8089-11D0-9CE4-08003E301F73 mcr.micro
 
 ### Access an NVIDIA GPU
 
-The `--gpus­` flag allows you to access NVIDIA GPU resources. First you need to
+The `--gpus` flag allows you to access NVIDIA GPU resources. First you need to
 install [nvidia-container-runtime](https://nvidia.github.io/nvidia-container-runtime/).
 Visit [Specify a container's resources](https://docs.docker.com/config/containers/resource_constraints/)
 for more information.
+> `--gpus`标志允许你访问 NVIDIA GPU 资源。首先需要安装 [nvidia-container-runtime](https://nvidia.github.io/nvidia-container-runtime/)。
+> 访问 [Specify a container's resources](https://docs.docker.com/config/containers/resource_constraints/) 获取更多信息。
 
 To use `--gpus`, specify which GPUs (or all) to use. If no value is provied, all
 available GPUs are used. The example below exposes all available GPUs.
+> 使用`--gpus` 指定哪个GPU（或者所有）使用。如果没有提供值，所有可用的GPU都被使用。
+> 下面的示例公开了所有可用的GPU。
 
 ```bash
 $ docker run -it --rm --gpus all ubuntu nvidia-smi
@@ -682,22 +749,28 @@ $ docker run -it --rm --gpus all ubuntu nvidia-smi
 
 Use the `device` option to specify GPUs. The example below exposes a specific
 GPU.
+> 使用`device`选项制定GPU。下面的示例公开了一个特定的GPU。
 
 ```bash
 $ docker run -it --rm --gpus device=GPU-3a23c669-1f69-c64e-cf85-44e9b07e7a2a ubuntu nvidia-smi
 ```
 
 The example below exposes the first and third GPUs.
+> 下面的示例公开了第一个和第三个GPU。
 
 ```bash
 $ docker run -it --rm --gpus device=0,2 nvidia-smi
 ```
 
 ### Restart policies (--restart)
+> 重启策略
 
 Use Docker's `--restart` to specify a container's *restart policy*. A restart
 policy controls whether the Docker daemon restarts a container after exit.
 Docker supports the following restart policies:
+> 使用 Docker的 `--restart`来指定容器的重启策略。
+> 一个重启策略控制Docker守护进程是否在容器推出后重新启动它。
+> Docker支持一下重启策略：
 
 | Policy                     | Result                                                                                                                                                                                                                                                           |
 |:---------------------------|:-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
@@ -706,22 +779,31 @@ Docker supports the following restart policies:
 | `unless-stopped`           | Restart the container unless it is explicitly stopped or Docker itself is stopped or restarted.                                                                                                                                                                  |
 | `always`                   | Always restart the container regardless of the exit status. When you specify always, the Docker daemon will try to restart the container indefinitely. The container will also always start on daemon startup, regardless of the current state of the container. |
 
+> `no` : 不要在容器退出时重启它，这是默认值。
+> `on-failure[:max-retries]` : 只在容器以非0状态退出时才重启。（可选）限制Docker守护进程尝试重启的次数。
+> `unless-stopped` : 重新启动容器，除非容器已显式停止或者Docker自身已停止或重新启动。
+> `always` : 无论推出状态如何，始终重启容器。当你指定`always`，Docker守护进程将无限期地重启容器。无论容器的当前状态如何，容器总在守护进程启动时启动。
+
 ```bash
 $ docker run --restart=always redis
 ```
 
 This will run the `redis` container with a restart policy of **always**
 so that if the container exits, Docker will restart it.
+> 这将以 **always** 的重启策略运行`redis`，所以如果容器推出，Docker将重启它。
 
 More detailed information on restart policies can be found in the
 [Restart Policies (--restart)](../run.md#restart-policies---restart)
 section of the Docker run reference page.
+> 在Docker run 参考页有更多的关于重启策略详情  [Restart Policies (--restart)](https://github.com/docker/cli/blob/master/docs/reference/run.md#restart-policies---restart)
 
 ### Add entries to container hosts file (--add-host)
+> 向容器的hosts文件添加条目
 
 You can add other hosts into a container's `/etc/hosts` file by using one or
 more `--add-host` flags. This example adds a static address for a host named
 `docker`:
+> 你可以通过使用一个或多个`--add-host`标志其他hosts添加到容器的`/ect/hosts`文件
 
 ```bash
 $ docker run --add-host=docker:10.180.0.1 --rm -it debian
@@ -739,10 +821,14 @@ Sometimes you need to connect to the Docker host from within your
 container. To enable this, pass the Docker host's IP address to
 the container using the `--add-host` flag. To find the host's address,
 use the `ip addr show` command.
+> 有时候你需要从容器内链接Docker主机。要使用此功能，请使用`--add-host`标志将Docker主机的IP地址传递给容器。
+> 要查询主机地址，请使用`ip addr show`指令。
 
 The flags you pass to `ip addr show` depend on whether you are
 using IPv4 or IPv6 networking in your containers. Use the following
 flags for IPv4 address retrieval for a network device named `eth0`:
+> 传递给`ip addr show`的标志取决于容器中使用的是IPV4还是IPV6网络。
+> 使用以下标志来检索名为`eth0`d额网络设备的IPV4地址。
 
 ```bash
 $ HOSTIP=`ip -4 addr show scope global dev eth0 | grep inet | awk '{print $2}' | cut -d / -f 1 | sed -n 1p`
@@ -752,13 +838,18 @@ $ docker run  --add-host=docker:${HOSTIP} --rm -it debian
 For IPv6 use the `-6` flag instead of the `-4` flag. For other network
 devices, replace `eth0` with the correct device name (for example `docker0`
 for the bridge device).
+> 对于IPV6，使用`-6` 标志替代 `-4`标志。
+> 对于其它网路哦设备，使用正确的设备名称替代`eth0`(例如 网桥设备的`docker0` )
 
 ### Set ulimits in container (--ulimit)
+> 在容器中设置限制
 
 Since setting `ulimit` settings in a container requires extra privileges not
 available in the default container, you can set these using the `--ulimit` flag.
 `--ulimit` is specified with a soft and hard limit as such:
 `<type>=<soft limit>[:<hard limit>]`, for example:
+> 在容器中如果需要默认容器中不可用的额外特权，可以使用`--ulimit`标志来设置这些特权。
+> `--ulimit`被指定为软限制和应限制 比如:<type>=<soft limit>[:<hard limit>]`, 例如：
 
 ```bash
 $ docker run --ulimit nofile=1024:1024 --rm debian sh -c "ulimit -n"
@@ -771,6 +862,8 @@ $ docker run --ulimit nofile=1024:1024 --rm debian sh -c "ulimit -n"
 > for both values. If no `ulimits` are set, they are inherited from
 > the default `ulimits` set on the daemon. The `as` option is disabled now.
 > In other words, the following script is not supported:
+> 如果你不提供`hard limit`， 则`soft limit` 将应用于这两个值。
+> 如果为设置`ulimit`，则从守护进程上设置的默认`ulimit`继承。
 >
 > ```bash
 > $ docker run -it --ulimit as=1024 fedora /bin/bash`
@@ -778,12 +871,15 @@ $ docker run --ulimit nofile=1024:1024 --rm debian sh -c "ulimit -n"
 
 The values are sent to the appropriate `syscall` as they are set.
 Docker doesn't perform any byte conversion. Take this into account when setting the values.
+> 这些值在设置时被发送到相应的syscall。Dockers不执行任何字节转换。设置值时要考虑到这一点。
 
 #### For `nproc` usage
 
 Be careful setting `nproc` with the `ulimit` flag as `nproc` is designed by Linux to set the
 maximum number of processes available to a user, not to a container.  For example, start four
 containers with `daemon` user:
+> 请小心使用`ulimit`标志设置`nproc`，因为`nproc`是由Linux设计的，用于设置用户可用的最大进程数，而不是容器容器可用的最大进程数。
+> 例如，用`daemon`用户启动四个容器：
 
 ```bash
 $ docker run -d -u daemon --ulimit nproc=3 busybox top
@@ -798,29 +894,43 @@ $ docker run -d -u daemon --ulimit nproc=3 busybox top
 The 4th container fails and reports "[8] System error: resource temporarily unavailable" error.
 This fails because the caller set `nproc=3` resulting in the first three containers using up
 the three processes quota set for the `daemon` user.
+> 第四个容器失败报告"[8] System error: resource temporarily unavailable"错误。
+> 失败是因为调用者设置`nproc=3`导致前三个容器使用了为`daemon`用户设置的三个进程配额。
 
 ### Stop container with signal (--stop-signal)
+> 带信号停止容器
 
 The `--stop-signal` flag sets the system call signal that will be sent to the container to exit.
 This signal can be a valid unsigned number that matches a position in the kernel's syscall table, for instance 9,
 or a signal name in the format SIGNAME, for instance SIGKILL.
+> `--stop signal`标志设置将发送到容器以退出的系统调用信号。
+> 这个信号可以是一个有效的无符号数字，它与内核syscall表中的一个位置相匹配，例如9，也可以是SIGNAME格式的信号名，例如SIGKILL。
 
 ### Optional security options (--security-opt)
+> 可选安全选项
 
 On Windows, this flag can be used to specify the `credentialspec` option.
 The `credentialspec` must be in the format `file://spec.txt` or `registry://keyname`.
+> 在Windos上，此标志可以用于指定 `credentialspec` 选项。
+> `credentialspec` 的格式必须是`file://spec.txt` or `registry://keyname`。
 
 ### Stop container with timeout (--stop-timeout)
+> 使用超时来停止容器
 
 The `--stop-timeout` flag sets the timeout (in seconds) that a pre-defined (see `--stop-signal`) system call
 signal that will be sent to the container to exit. After timeout elapses the container will be killed with SIGKILL.
+> `--stop timeout`标志设置将发送到容器以退出的预定义（请参阅`--stop signal`）系统调用信号的超时（以秒为单位）。
+> 超时过后，容器将被SIGKILL杀死。
 
 ### Specify isolation technology for container (--isolation)
+> 指定容器的隔离技术
 
 This option is useful in situations where you are running Docker containers on
 Windows. The `--isolation <value>` option sets a container's isolation technology.
 On Linux, the only supported is the `default` option which uses
 Linux namespaces. These two commands are equivalent on Linux:
+> 此选项在Windows上运行Docker容器的情况下非常有用。`--isolation<value>`选项设置容器的隔离技术。
+> 在Linux上，唯一受支持的是使用Linux namespace的默认选项。这两个命令在Linux上是等效的：
 
 ```bash
 $ docker run -d busybox top
@@ -828,6 +938,7 @@ $ docker run -d --isolation default busybox top
 ```
 
 On Windows, `--isolation` can take one of these values:
+> 在Windows上，`--isolation` 可以采用以下值之一
 
 
 | Value     | Description                                                                                                       |
@@ -835,13 +946,19 @@ On Windows, `--isolation` can take one of these values:
 | `default` | Use the value specified by the Docker daemon's `--exec-opt` or system default (see below).                        |
 | `process` | Shared-kernel namespace isolation (not supported on Windows client operating systems older than Windows 10 1809). |
 | `hyperv`  | Hyper-V hypervisor partition-based isolation.                                                                     |
+> `default` : 使用Docker守护进程的`--exec opt`或系统默认值指定的值（见下文）。  
+> `process` : 共享内核（Shared-kernel） namespace隔离（在早于Windows 10 1809的Windows客户端操作系统上不受支持）。  
+> `hyperv` : 基于Hyper-V虚拟机监控程序分区的隔离。
 
 The default isolation on Windows server operating systems is `process`. The default
 isolation on Windows client operating systems is `hyperv`. An attempt to start a container on a client
 operating system older than Windows 10 1809 with `--isolation process` will fail.
+> Windows服务器操作系统上的默认隔离是`process`。Windows客户端操作系统上的默认隔离是`hyperv`。
+> 尝试在早于Windows101809的客户端操作系统上用`--isolation process`启动容器将失败。
 
 On Windows server, assuming the default configuration, these commands are equivalent
 and result in `process` isolation:
+> 在Windows服务器上，假设默认配置，这些命令导致的`process`隔离是等效的：
 
 ```powershell
 PS C:\> docker run -d microsoft/nanoserver powershell echo process
@@ -852,6 +969,8 @@ PS C:\> docker run -d --isolation process microsoft/nanoserver powershell echo p
 If you have set the `--exec-opt isolation=hyperv` option on the Docker `daemon`, or
 are running against a Windows client-based daemon, these commands are equivalent and
 result in `hyperv` isolation:
+> 如果您已经在Docker守护程序上设置了`--exec-opt isolation=hyperv`选项，
+> 或者正在针对基于Windows客户端的守护程序运行，那么这些命令是等效的，并且会导致`hyperv`隔离：
 
 ```powershell
 PS C:\> docker run -d microsoft/nanoserver powershell echo hyperv
@@ -860,14 +979,18 @@ PS C:\> docker run -d --isolation hyperv microsoft/nanoserver powershell echo hy
 ```
 
 ### Specify hard limits on memory available to containers (-m, --memory)
+> 指定容器可用内存的硬限制
 
 These parameters always set an upper limit on the memory available to the container. On Linux, this
 is set on the cgroup and applications in a container can query it at `/sys/fs/cgroup/memory/memory.limit_in_bytes`.
+> 这些参数总是设置容器可用内存的上限。
+> 在Linux上，这是在cgroup上设置的，容器中的应用程序可以在`/sys/fs/cgroup/memory/memory.limit_in_bytes`查询它。
 
 On Windows, this will affect containers differently depending on what type of isolation is used.
+> 在Windows上，这将根据所使用的隔离类型对容器产生不同的影响
 
-- With `process` isolation, Windows will report the full memory of the host system, not the limit to applications running inside the container
-
+- With `process` isolation, Windows will report the full memory of the host system, not the limit to applications running inside the containe
+  > 使用`process`隔离，Windows将报告主机系统的全部内存，而不是对容器内运行的应用程序的限制
     ```powershell
     PS C:\> docker run -it -m 2GB --isolation=process microsoft/nanoserver powershell Get-ComputerInfo *memory*
 
@@ -882,6 +1005,8 @@ On Windows, this will affect containers differently depending on what type of is
     ```
 
 - With `hyperv` isolation, Windows will create a utility VM that is big enough to hold the memory limit, plus the minimal OS needed to host the container. That size is reported as "Total Physical Memory."
+  > 使用`hyperv`隔离，Windows将创建一个足够大的实用虚拟机来容纳内存限制，再加上托管容器所需的最小操作系统。
+  > 这个大小被报告为“Total Physical Memory”
 
     ```powershell
     PS C:\> docker run -it -m 2GB --isolation=hyperv microsoft/nanoserver powershell Get-ComputerInfo *memory*
@@ -898,10 +1023,13 @@ On Windows, this will affect containers differently depending on what type of is
 
 
 ### Configure namespaced kernel parameters (sysctls) at runtime
+> 在运行时配置命名空间内核参数（sysctls)
 
 The `--sysctl` sets namespaced kernel parameters (sysctls) in the
 container. For example, to turn on IP forwarding in the containers
 network namespace, run this command:
+> `--sysctl`设置容器中的命名空间内核参数（sysctl）。
+> 例如，要在容器网络名称空间中启用IP转发，请运行以下命令：
 
 ```bash
 $ docker run --sysctl net.ipv4.ip_forward=1 someimage
@@ -912,8 +1040,11 @@ $ docker run --sysctl net.ipv4.ip_forward=1 someimage
 > Not all sysctls are namespaced. Docker does not support changing sysctls
 > inside of a container that also modify the host system. As the kernel
 > evolves we expect to see more sysctls become namespaced.
+> 并非所有sysctl都有名称空间。Docker不支持在同时修改主机系统的容器内更改sysctl。
+> 随着内核的发展，我们期望看到更多的sysctl被命名。
 
 #### Currently supported sysctls
+> 目前支持的sysctls
 
 IPC Namespace:
 
