@@ -1160,6 +1160,8 @@ EXPOSE <port> [<port>/<protocol>...]
 The `EXPOSE` instruction informs Docker that the container listens on the
 specified network ports at runtime. You can specify whether the port listens on
 TCP or UDP, and the default is TCP if the protocol is not specified.
+> `EXPOSE`指令通知Docker容器在运行时侦听指定的网络端口。
+> 您可以指定端口是侦听TCP还是UDP，如果未指定协议，则默认为TCP。
 
 The `EXPOSE` instruction does not actually publish the port. It functions as a
 type of documentation between the person who builds the image and the person who
@@ -1167,14 +1169,19 @@ runs the container, about which ports are intended to be published. To actually
 publish the port when running the container, use the `-p` flag on `docker run`
 to publish and map one or more ports, or the `-P` flag to publish all exposed
 ports and map them to high-order ports.
+> EXPOSE指令实际上并不发布端口。它是构建映像的人员和运行容器的人员之间的一种文档类型，计划要发布的端口。
+> 要在运行容器时实际发布端口，请在`docker run`上使用`-p`标志发布和映射一个或多个端口，
+> 或者使用`-P`标志发布所有公开的端口并将它们映射到高阶端口。
 
 By default, `EXPOSE` assumes TCP. You can also specify UDP:
+> 默认情况下，`EXPOSE`采用TCP。也可以指定UDP：
 
 ```dockerfile
 EXPOSE 80/udp
 ```
 
 To expose on both TCP and UDP, include two lines:
+> 要在TCP和UDP上都公开，请包括两行：
 
 ```dockerfile
 EXPOSE 80/tcp
@@ -1184,9 +1191,12 @@ EXPOSE 80/udp
 In this case, if you use `-P` with `docker run`, the port will be exposed once
 for TCP and once for UDP. Remember that `-P` uses an ephemeral high-ordered host
 port on the host, so the port will not be the same for TCP and UDP.
+> 在这种情况下，如果将`-P`与`docker run`一起使用，则端口将为TCP和UDP分别公开一次。
+> 请记住，`-P`在主机上使用临时的高阶主机端口，因此TCP和UDP的端口将不同。
 
 Regardless of the `EXPOSE` settings, you can override them at runtime by using
 the `-p` flag. For example
+> 不管`EXPOSE`设置如何，都可以在运行时使用-p标志覆盖它们。例如：
 
 ```bash
 docker run -p 80:80/tcp -p 80:80/udp ...
@@ -1198,6 +1208,9 @@ containers without the need to expose or publish specific ports, because the
 containers connected to the network can communicate with each other over any
 port. For detailed information, see the
 [overview of this feature](https://docs.docker.com/engine/userguide/networking/).
+> 要在主机系统上设置端口重定向，请参阅[using the -P flag](https://docs.docker.com/engine/reference/run/#expose-incoming-ports) 。
+> docker network命令支持创建用于容器间通信的网络，而无需公开或发布特定端口，因为连接到网络的容器可以通过任何端口相互通信。
+> 有关详细信息，请参阅[overview of this feature](https://docs.docker.com/engine/userguide/networking/) 。
 
 ## ENV
 
@@ -1211,6 +1224,10 @@ in the build stage and can be [replaced inline](#environment-replacement) in
 many as well. The value will be interpreted for other environment variables, so
 quote characters will be removed if they are not escaped. Like command line parsing,
 quotes and backslashes can be used to include spaces within values.
+> `ENV`指令将环境变量`<key>`设置为值`<value>`。
+> 该值将在构建阶段的所有后续指令的环境中，并且可以在许多环境中内联替换。
+> 该值将被解释为其他环境变量，因此引号字符将被删除，如果他们没有转义。
+> 与命令行分析一样，引号和反斜杠可以用于在值中包含空格。
 
 Example:
 
@@ -1223,6 +1240,7 @@ ENV MY_CAT=fluffy
 The `ENV` instruction allows for multiple `<key>=<value> ...` variables to be set
 at one time, and the example below will yield the same net results in the final
 image:
+> `ENV`指令允许多个`<key>=<value> ...`一次设置变量，下面的示例将在最终镜像中产生相同的净结果：
 
 ```dockerfile
 ENV MY_NAME="John Doe" MY_DOG=Rex\ The\ Dog \
@@ -1232,29 +1250,36 @@ ENV MY_NAME="John Doe" MY_DOG=Rex\ The\ Dog \
 The environment variables set using `ENV` will persist when a container is run
 from the resulting image. You can view the values using `docker inspect`, and
 change them using `docker run --env <key>=<value>`.
+> 当容器从结果镜像运行时，使用`ENV`设置的环境变量将保持不变。
+> 您可以使用`docker inspect`查看值，并使用`docker run --env <key>=<value>`更改它们。
 
 Environment variable persistence can cause unexpected side effects. For example,
 setting `ENV DEBIAN_FRONTEND=noninteractive` changes the behavior of `apt-get`,
 and may confuse users of your image.
+> 环境变量持久性可能会导致意外的副作用。
+> 例如，设置`ENV DEBIAN_FRONTEND=noninteractive`会更改apt-get的行为，并可能会混淆图像的用户。
 
 If an environment variable is only needed during build, and not in the final
 image, consider setting a value for a single command instead:
+> 如果仅在生成过程中需要环境变量，而不是在最终映像中，请考虑为单个命令设置值：
 
 ```dockerfile
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y ...
 ```
 
 Or using [`ARG`](#arg), which is not persisted in the final image:
+> 或者使用[`ARG`](#arg)，它不会保留在最终镜像中：
 
 ```dockerfile
 ARG DEBIAN_FRONTEND=noninteractive
 RUN apt-get update && apt-get install -y ...
 ```
 
-> **Alternative syntax**
+> **Alternative syntax** 替代语法
 >
 > The `ENV` instruction also allows an alternative syntax `ENV <key> <value>`,
-> omitting the `=`. For example:
+> omitting the `=`. For example:   
+> `ENV`指令还允许使用另一种语法`ENV <key> <value>`，省略`=`。例如：  
 >
 > ```dockerfile
 > ENV MY_VAR my-value
@@ -1262,18 +1287,22 @@ RUN apt-get update && apt-get install -y ...
 >
 > This syntax does not allow for multiple environment-variables to be set in a
 > single `ENV` instruction, and can be confusing. For example, the following
-> sets a single environment variable (`ONE`) with value `"TWO= THREE=world"`:
+> sets a single environment variable (`ONE`) with value `"TWO= THREE=world"`:   
+> 这种语法不允许在一条`ENV`指令中设置多个环境变量，这会造成混淆。
+> 例如，下面设置一个值为`"TWO= THREE=world"`的环境变量(`ONE`)：  
 >
 > ```dockerfile
 > ENV ONE TWO= THREE=world
 > ```
 >
 > The alternative syntax is supported for backward compatibility, but discouraged
-> for the reasons outlined above, and may be removed in a future release.
+> for the reasons outlined above, and may be removed in a future release.  
+> 支持替代语法是为了向后兼容，但由于上述原因不鼓励使用，并且可能在将来的版本中删除。
 
 ## ADD
 
 ADD has two forms:
+> ADD 有两种形式：
 
 ```dockerfile
 ADD [--chown=<user>:<group>] <src>... <dest>
@@ -1281,6 +1310,7 @@ ADD [--chown=<user>:<group>] ["<src>",... "<dest>"]
 ```
 
 The latter form is required for paths containing whitespace.
+> 包含空格的路径需要后一种形式。
 
 > **Note**
 >
@@ -1288,25 +1318,33 @@ The latter form is required for paths containing whitespace.
 > and will not work on Windows containers. Since user and group ownership concepts do
 > not translate between Linux and Windows, the use of `/etc/passwd` and `/etc/group` for
 > translating user and group names to IDs restricts this feature to only be viable
-> for Linux OS-based containers.
+> for Linux OS-based containers.  
+> `--chown`特性仅在用于构建Linux容器的Dockerfiles上受支持，在Windows容器上不起作用。
+> 由于用户和组所有权概念不会在Linux和Windows之间转换，
+> 因此使用/etc/passwd和/etc/group将用户名和组名转换为id将限制此功能仅适用于基于Linux操作系统的容器。
 
 The `ADD` instruction copies new files, directories or remote file URLs from `<src>`
 and adds them to the filesystem of the image at the path `<dest>`.
+> `ADD`指令从`<src>`复制新文件、目录或远程文件URLs，并将它们添加到路径`<dest>`处的镜像文件系统中。
 
 Multiple `<src>` resources may be specified but if they are files or
 directories, their paths are interpreted as relative to the source of
 the context of the build.
+> 可以指定多个`<src>`资源，但如果它们是文件或目录，则它们的路径将被解释为相对于构建上下文的源。
 
 Each `<src>` may contain wildcards and matching will be done using Go's
 [filepath.Match](http://golang.org/pkg/path/filepath#Match) rules. For example:
+> 每个`<src>`可能包含通配符，匹配将使用Go的[filepath.Match](http://golang.org/pkg/path/filepath#Match) 规则。例如：
 
 To add all files starting with "hom":
+> 添加所有以"hom"开头的文件：
 
 ```dockerfile
 ADD hom* /mydir/
 ```
 
 In the example below, `?` is replaced with any single character, e.g., "home.txt".
+> 下面的列子中，`?`替换为任意单字符， 比如 "home.txt"。
 
 ```dockerfile
 ADD hom?.txt /mydir/
@@ -1314,14 +1352,17 @@ ADD hom?.txt /mydir/
 
 The `<dest>` is an absolute path, or a path relative to `WORKDIR`, into which
 the source will be copied inside the destination container.
+> `<dest>`是一个绝对路径，或者是相对于WORKDIR的路径，源将被复制到目标容器中。
 
 The example below uses a relative path, and adds "test.txt" to `<WORKDIR>/relativeDir/`:
+> 下面的例子使用的是相对路径，添加 "test.txt" 到 `<WORKDIR>/relativeDir/`:
 
 ```dockerfile
 ADD test.txt relativeDir/
 ```
 
 Whereas this example uses an absolute path, and adds "test.txt" to `/absoluteDir/`
+> 然后本例子使用的是绝对路径，添加"test.txt" 到 `/absoluteDir/` ：
 
 ```dockerfile
 ADD test.txt /absoluteDir/
@@ -1331,6 +1372,8 @@ When adding files or directories that contain special characters (such as `[`
 and `]`), you need to escape those paths following the Golang rules to prevent
 them from being treated as a matching pattern. For example, to add a file
 named `arr[0].txt`, use the following;
+> 添加包含特殊字符（如 `[` 和 `]` ）的文件或目录时，需要按照Golang规则转义这些路径，以防止它们被视为匹配模式。
+> 例如，要添加名为`arr[0].txt`的文件，请使用以下命令：
 
 ```dockerfile
 ADD arr[[]0].txt /mydir/
@@ -1347,6 +1390,11 @@ username or groupname is provided, the container's root filesystem
 `/etc/passwd` and `/etc/group` files will be used to perform the translation
 from name to integer UID or GID respectively. The following examples show
 valid definitions for the `--chown` flag:
+> 所有新文件和目录都是使用UID和GID为0创建的，除非可选的`--chown`标志指定一个给定的用户名、组名或UID/GID组合以请求所添加内容的特定所有权。
+> `--chown`标志的格式允许username和groupname字符串或任意组合的直接整数UID和GID。
+> 提供不带groupname的用户名或不带GID的UID将使用与GID相同的数字UID。
+> 如果提供了用户名或组名，则将使用容器的根文件系统`/etc/passwd`和`/etc/group`文件分别执行从名称到整数UID或GID的转换。
+> 以下示例显示--chown标志的有效定义：
 
 ```dockerfile
 ADD --chown=55:mygroup files* /somedir/
@@ -1359,6 +1407,8 @@ If the container root filesystem does not contain either `/etc/passwd` or
 `/etc/group` files and either user or group names are used in the `--chown`
 flag, the build will fail on the `ADD` operation. Using numeric IDs requires
 no lookup and will not depend on container root filesystem content.
+> 如果容器根文件系统不包含`/etc/passwd`或`/etc/group`文件，并且在`--chown`标志中使用了用户名或组名，
+> 则构建在ADD操作中将失败。使用数字ID不需要查找，也不依赖于容器根文件系统内容。
 
 In the case where `<src>` is a remote file URL, the destination will
 have permissions of 600. If the remote file being retrieved has an HTTP
@@ -1366,6 +1416,8 @@ have permissions of 600. If the remote file being retrieved has an HTTP
 to set the `mtime` on the destination file. However, like any other file
 processed during an `ADD`, `mtime` will not be included in the determination
 of whether or not the file has changed and the cache should be updated.
+> 如果`<src>`是远程文件URL，则目标将拥有600的权限。
+> 如果要检索的远程文件具有`HTTP Last Modified`头，则该头中的时间戳将用于设置目标文件的`mtime`。
 
 > **Note**
 >
@@ -1374,11 +1426,16 @@ of whether or not the file has changed and the cache should be updated.
 > can only contain a URL based `ADD` instruction. You can also pass a
 > compressed archive through STDIN: (`docker build - < archive.tar.gz`),
 > the `Dockerfile` at the root of the archive and the rest of the
-> archive will be used as the context of the build.
+> archive will be used as the context of the build.   
+> 如果通过STDIN（`docker > build - < somefile`）传递`Dockerfile`进行构建，
+> 则没有构建上下文，因此`Dockerfile`只能包含基于`ADD`指令的一个`URL`。
+> 你还可以通过STDIN:（`docker build - < archive.tar.gz`)，
+> 归档文件根目录下的`Dockerfile`和归档文件的其余部分将用作构建的上下文。
 
 If your URL files are protected using authentication, you need to use `RUN wget`,
 `RUN curl` or use another tool from within the container as the `ADD` instruction
 does not support authentication.
+> 如果URL文件使用身份验证进行保护，则需要使用`RUN wget`、`RUN curl`或使用容器中的其他工具，因为ADD指令不支持身份验证。
 
 > **Note**
 >
@@ -1387,18 +1444,26 @@ does not support authentication.
 > changed. This includes invalidating the cache for `RUN` instructions.
 > See the [`Dockerfile` Best Practices
 guide – Leverage build cache](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#leverage-build-cache)
-> for more information.
+> for more information.  
+> 如果`<src>`的内容已更改，则遇到的第一条`ADD`指令将使Dockerfile中所有后续指令的缓存失效。
+> 这包括使`RUN`指令的缓存失效。
+> 参考[`Dockerfile` Best Practices
+    guide – Leverage build cache](https://docs.docker.com/develop/develop-images/dockerfile_best-practices/#leverage-build-cache) 获得更多信息。
 
 
 `ADD` obeys the following rules:
+> `ADD`遵循以下规则：
 
 - The `<src>` path must be inside the *context* of the build;
   you cannot `ADD ../something /something`, because the first step of a
   `docker build` is to send the context directory (and subdirectories) to the
   docker daemon.
+  > `<src>`路径必须在生成的上下文中；不能`ADD ../something /something`，
+  > 因为`docker build`的第一步是将上下文目录（和子目录）发送到docker守护进程。
 
 - If `<src>` is a URL and `<dest>` does not end with a trailing slash, then a
   file is downloaded from the URL and copied to `<dest>`.
+  > 如果`<src>`是一个URL，而`<dest>`没有以斜杠结尾，则从URL下载一个文件并复制到`<dest>`。
 
 - If `<src>` is a URL and `<dest>` does end with a trailing slash, then the
   filename is inferred from the URL and the file is downloaded to
@@ -1406,22 +1471,31 @@ guide – Leverage build cache](https://docs.docker.com/develop/develop-images/d
   create the file `/foobar`. The URL must have a nontrivial path so that an
   appropriate filename can be discovered in this case (`http://example.com`
   will not work).
+  > 如果`<src>`是一个URL，并且`<dest>`以斜杠结尾，则从URL推断文件名，并将文件下载到`<dest>/<filename>`。
+  > 例如，`ADD http://example.com/foobar /`将创建文件`/foobar`。
+  > URL必须有一个非平凡的路径，以便在这种情况下可以找到适当的文件名(http://example.com将不工作）。
 
 - If `<src>` is a directory, the entire contents of the directory are copied,
   including filesystem metadata.
+  > 如果`<src>`是一个目录，则复制目录的全部内容，包括文件系统元数据。
 
 > **Note**
 >
-> The directory itself is not copied, just its contents.
+> The directory itself is not copied, just its contents.  
+> 目录本身不复制的，只是复制它的内容。
 
 - If `<src>` is a *local* tar archive in a recognized compression format
   (identity, gzip, bzip2 or xz) then it is unpacked as a directory. Resources
   from *remote* URLs are **not** decompressed. When a directory is copied or
   unpacked, it has the same behavior as `tar -x`, the result is the union of:
+  > 如果`<src>`是一个*本地*tar归档文件，采用可识别的压缩格式（identity、gzip、bzip2或xz），则将其解包为目录。
+  > *不会*解压缩来自*远程*URL的资源。复制或解压缩目录时，其行为与tar-x相同，其结果是:
 
     1. Whatever existed at the destination path and
+        > 无论目标路径上存在什么
     2. The contents of the source tree, with conflicts resolved in favor
        of "2." on a file-by-file basis.
+       > 源目录树的内容，以支持"2."的方式逐文件解决冲突。
 
   > **Note**
   >
@@ -1430,22 +1504,29 @@ guide – Leverage build cache](https://docs.docker.com/develop/develop-images/d
   > For example, if an empty file happens to end with `.tar.gz` this will not
   > be recognized as a compressed file and **will not** generate any kind of
   > decompression error message, rather the file will simply be copied to the
-  > destination.
+  > destination.    
+  > 文件是否被识别为可识别的压缩格式完全取决于文件的内容，而不是文件名。
+  > 例如，如果一个空文件恰好以`.tar.gz`结尾 这不会被识别为压缩文件，也不会生成任何类型的解压缩错误消息，而只是将文件复制到目标。
 
 - If `<src>` is any other kind of file, it is copied individually along with
   its metadata. In this case, if `<dest>` ends with a trailing slash `/`, it
   will be considered a directory and the contents of `<src>` will be written
   at `<dest>/base(<src>)`.
+  > 如果`<src>`是任何其他类型的文件，则会将其与其元数据单独复制。
+  > 在这种情况下，如果`<dest>`以斜杠`/`结尾，它将被视为一个目录，`<src>`的内容将写入`<dest>/base(<src>)`。
 
 - If multiple `<src>` resources are specified, either directly or due to the
   use of a wildcard, then `<dest>` must be a directory, and it must end with
   a slash `/`.
+  > 如果直接或由于使用通配符而指定了多个`<src>`资源，则`<dest>`必须是一个目录，并且必须以斜杠`/`结尾。
 
 - If `<dest>` does not end with a trailing slash, it will be considered a
   regular file and the contents of `<src>` will be written at `<dest>`.
+  > 如果`<dest>`没有以斜杠结尾，它将被视为常规文件，`<src>`的内容将写入`<dest>`。
 
 - If `<dest>` doesn't exist, it is created along with all missing directories
   in its path.
+  > 如果`<dest>`不存在，它将与其路径中所有丢失的目录一起创建。
 
 ## COPY
 
