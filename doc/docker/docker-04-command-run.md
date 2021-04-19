@@ -421,7 +421,7 @@ Use the `-e`, `--env`, and `--env-file` flags to set simple (non-array)
 environment variables in the container you're running, or overwrite variables
 that are defined in the Dockerfile of the image you're running.
 > 使用`-e`、`--env`和`--env-file` 标志 来设置正在运行的容器中的简单（非数组）环境变量，
-> 或者覆盖正在运行的映像的Dockerfile中定义的变量
+> 或者覆盖正在运行的镜像的Dockerfile中定义的变量
 
 You can define the variable and its value when running the container:
 > 在运行容器时，你可以定义变量及其值：
