@@ -119,7 +119,7 @@ Whenever possible, Docker will re-use the intermediate images (cache),
 to accelerate the `docker build` process significantly. This is indicated by
 the `Using cache` message in the console output.
 (For more information, see the [`Dockerfile` best practices guide](https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/) :
-> 只要有可能，Docker将重用中间映像（cache），以显著加快`docker build`构建过程。
+> 只要有可能，Docker将重用中间镜像（cache），以显著加快`docker build`构建过程。
 > 这由控制台输出中的“Using cache”消息表示。
 > 更多的详情，请看  [`Dockerfile` best practices guide](https://docs.docker.com/engine/userguide/eng-image/dockerfile_best-practices/)
 
@@ -147,10 +147,10 @@ was loaded with `docker load`. If you wish to use build cache of a specific
 image you can specify it with `--cache-from` option. Images specified with
 `--cache-from` do not need to have a parent chain and may be pulled from other
 registries.
-> 生成缓存仅用于具有本地父链的映像。
-> 这意味着这些映像是由以前的构建创建的，或者整个映像链是用“docker load”加载的。
-> 如果要使用特定映像的生成缓存，可以使用“-cache from”选项指定它。
-> 用“-cache from”指定的映像不需要父链，可以从其它registries中提取。
+> 生成缓存仅用于具有本地父链的镜像。
+> 这意味着这些镜像是由以前的构建创建的，或者整个镜像链是用“docker load”加载的。
+> 如果要使用特定镜像的生成缓存，可以使用“-cache from”选项指定它。
+> 用“-cache from”指定的镜像不需要父链，可以从其它registries中提取。
 
 When you're done with your build, you're ready to look into [*Pushing a
 repository to its registry*](https://docs.docker.com/engine/tutorials/dockerrepos/#/contributing-to-docker-hub).
@@ -212,7 +212,7 @@ building. `FROM` may only be preceded by one or more `ARG` instructions, which
 declare arguments that are used in `FROM` lines in the `Dockerfile`.
 > Docker 顺序的执行`Dockerfile`中的指令。 一个`Dockerfile`必须以一个`FROM`指令开始。
 > 这可能在解析器指令、注释和全局作用域参数之后。
-> `FROM`指令指定要从哪个 [父映像](https://docs.docker.com/glossary/#parent_image) 构建。
+> `FROM`指令指定要从哪个 [父镜像](https://docs.docker.com/glossary/#parent_image) 构建。
 > `FROM'前面只能有一个或多个'ARG'指令，这些指令声明在'Dockerfile'的'FROM'行中使用的参数。
 
 Docker treats lines that *begin* with `#` as a comment, unless the line is
@@ -397,7 +397,7 @@ building the current Dockerfile. The BuildKit backend allows to seamlessly use
 external implementations of builders that are distributed as Docker images and
 execute inside a container sandbox environment.
 > syntax指令定义用于生成当前Dockerfile的Dockerfile生成器的位置。
-> BuildKit后端允许无缝地使用作为Docker映像分发并在容器沙盒环境中执行的构建器的外部实现。
+> BuildKit后端允许无缝地使用作为Docker镜像分发并在容器沙盒环境中执行的构建器的外部实现。
 
 Custom Dockerfile implementation allows you to:
 > 自定义Dockerfile实现允许你：
@@ -870,12 +870,12 @@ RUN has 2 forms:
 The `RUN` instruction will execute any commands in a new layer on top of the
 current image and commit the results. The resulting committed image will be
 used for the next step in the `Dockerfile`.
-> `RUN`指令将在当前镜像上的新层中执行任何命令，并提交结果。提交的映像将用于Dockerfile中的下一步。
+> `RUN`指令将在当前镜像上的新层中执行任何命令，并提交结果。提交的镜像将用于Dockerfile中的下一步。
 
 Layering `RUN` instructions and generating commits conforms to the core
 concepts of Docker where commits are cheap and containers can be created from
 any point in an image's history, much like source control.
-> 分层`RUN`指令和生成提交符合Docker的核心概念，在Docker中提交很廉价，可以从映像历史中的任何点创建容器，很像源代码管理。
+> 分层`RUN`指令和生成提交符合Docker的核心概念，在Docker中提交很廉价，可以从镜像历史中的任何点创建容器，很像源代码管理。
 
 The *exec* form makes it possible to avoid shell string munging, and to `RUN`
 commands using a base image that does not contain the specified shell executable.
@@ -1026,7 +1026,7 @@ expansion, not docker.
 
 When used in the shell or exec formats, the `CMD` instruction sets the command
 to be executed when running the image.
-> 在shell或exec格式中使用时，`CMD`指令设置运行映像时要执行的命令。
+> 在shell或exec格式中使用时，`CMD`指令设置运行镜像时要执行的命令。
 
 If you use the *shell* form of the `CMD`, then the `<command>` will execute in
 `/bin/sh -c`:
@@ -1063,7 +1063,7 @@ default specified in `CMD`.
 > Do not confuse `RUN` with `CMD`. `RUN` actually runs a command and commits
 > the result; `CMD` does not execute anything at build time, but specifies
 > the intended command for the image.  
-> 不要混淆`RUN`和`CMD`。`RUN`实际运行一个命令并提交结果；`CMD`在构建时不执行任何操作，而是为映像指定预期的命令。
+> 不要混淆`RUN`和`CMD`。`RUN`实际运行一个命令并提交结果；`CMD`在构建时不执行任何操作，而是为镜像指定预期的命令。
 
 ## LABEL
 
@@ -1169,7 +1169,7 @@ runs the container, about which ports are intended to be published. To actually
 publish the port when running the container, use the `-p` flag on `docker run`
 to publish and map one or more ports, or the `-P` flag to publish all exposed
 ports and map them to high-order ports.
-> EXPOSE指令实际上并不发布端口。它是构建映像的人员和运行容器的人员之间的一种文档类型，计划要发布的端口。
+> EXPOSE指令实际上并不发布端口。它是构建镜像的人员和运行容器的人员之间的一种文档类型，计划要发布的端口。
 > 要在运行容器时实际发布端口，请在`docker run`上使用`-p`标志发布和映射一个或多个端口，
 > 或者使用`-P`标志发布所有公开的端口并将它们映射到高阶端口。
 
@@ -1261,7 +1261,7 @@ and may confuse users of your image.
 
 If an environment variable is only needed during build, and not in the final
 image, consider setting a value for a single command instead:
-> 如果仅在生成过程中需要环境变量，而不是在最终映像中，请考虑为单个命令设置值：
+> 如果仅在生成过程中需要环境变量，而不是在最终镜像中，请考虑为单个命令设置值：
 
 ```dockerfile
 RUN DEBIAN_FRONTEND=noninteractive apt-get update && apt-get install -y ...
@@ -1869,7 +1869,7 @@ echo "exited $0"
 If you run this image with `docker run -it --rm -p 80:80 --name test apache`,
 you can then examine the container's processes with `docker exec`, or `docker top`,
 and then ask the script to stop Apache:
-> 如果使用`docker run -it --rm -p 80:80 --name test apache`运行此映像，
+> 如果使用`docker run -it --rm -p 80:80 --name test apache`运行此镜像，
 > 则可以使用使用`docker exec`或`docker top`检查容器的进程，然后要求脚本停止Apache：
 
 ```bash
@@ -2063,10 +2063,15 @@ string with multiple arguments, such as `VOLUME /var/log` or `VOLUME /var/log
 Docker client, refer to
 [*Share Directories via Volumes*](https://docs.docker.com/storage/volumes/)
 documentation.
+> `VOLUME`指令创建具有指定名称的装入点，并将其标记为保存来自本机主机或其他容器的外部装入的卷。
+> 该值可以是JSON数组, `VOLUME ["/var/log/"]`，或具有多个参数的普通字符串，如`VOLUME /var/log`或`VOLUME /var/log /var/db`。
+> 有关通过Docker客户端的更多信息/示例和安装说明，请参阅通[*Share Directories via Volumes*](https://docs.docker.com/storage/volumes/) 。
 
 The `docker run` command initializes the newly created volume with any data
 that exists at the specified location within the base image. For example,
 consider the following Dockerfile snippet:
+> `docker run`命令使用存在于基本镜像中指定位置的任何数据初始化新创建的卷。
+> 例如，考虑以下Dockerfile片段：
 
 ```dockerfile
 FROM ubuntu
@@ -2078,22 +2083,27 @@ VOLUME /myvol
 This Dockerfile results in an image that causes `docker run` to
 create a new mount point at `/myvol` and copy the  `greeting` file
 into the newly created volume.
+> 此Dockerfile生成一个镜像，使`docker run`在`/myvol`处创建一个新的装入点，并将`greeting`文件复制到新创建的卷中。
 
 ### Notes about specifying volumes
 
 Keep the following things in mind about volumes in the `Dockerfile`.
+> 关于`Dockerfile`中的卷，请记住以下几点。
 
 - **Volumes on Windows-based containers**: When using Windows-based containers,
   the destination of a volume inside the container must be one of:
+  > 使用基于Windows的容器时，容器内卷的目标必须是以下之一：
 
-    - a non-existing or empty directory
-    - a drive other than `C:`
+    - a non-existing or empty directory(一个不存在或为空的目录)
+    - a drive other than `C:`（除了`C:`以外的驱动）
 
 - **Changing the volume from within the Dockerfile**: If any build steps change the
   data within the volume after it has been declared, those changes will be discarded.
+  > 如果任何生成步骤在声明卷后更改了卷内的数据，则这些更改将被丢弃。
 
 - **JSON formatting**: The list is parsed as a JSON array.
   You must enclose words with double quotes (`"`) rather than single quotes (`'`).
+  > 列表被解析为JSON数组。必须用双引号(`"`)而不是单引号 (`'`)将单词括起来。
 
 - **The host directory is declared at container run-time**: The host directory
   (the mountpoint) is, by its nature, host-dependent. This is to preserve image
@@ -2101,6 +2111,8 @@ Keep the following things in mind about volumes in the `Dockerfile`.
   on all hosts. For this reason, you can't mount a host directory from
   within the Dockerfile. The `VOLUME` instruction does not support specifying a `host-dir`
   parameter.  You must specify the mountpoint when you create or run the container.
+  > 主机目录（挂载点）本质上依赖于主机。这是为了保持镜像的可移植性，因为不能保证给定的主机目录在所有主机上都可用。
+  > 因此，无法从Dockerfile中装载主机目录。`VOLUME`指令不支持指定`host dir`参数。必须在创建或运行容器时指定装入点。
 
 ## USER
 
@@ -2117,7 +2129,7 @@ USER <UID>[:<GID>]
 The `USER` instruction sets the user name (or UID) and optionally the user
 group (or GID) to use when running the image and for any `RUN`, `CMD` and
 `ENTRYPOINT` instructions that follow it in the `Dockerfile`.
-> `USER`指令设置运行映像时要使用的用户名（或UID）和可选的用户组（或GID），
+> `USER`指令设置运行镜像时要使用的用户名（或UID）和可选的用户组（或GID），
 > 以及`Dockerfile`中紧随其后的任何`RUN`、`CMD`和`ENTRYPOINT`指令。
 
 > Note that when specifying a group for the user, the user will have _only_ the
@@ -2341,17 +2353,21 @@ $ docker build .
 
 Using this Dockerfile example, `CONT_IMG_VER` is still persisted in the image but
 its value would be `v1.0.0` as it is the default set in line 3 by the `ENV` instruction.
-> 使用这个Dockerfile示例，`CONT_IMG_VER`仍然保留在映像中，但是它的值将是v1.0.0，因为它是ENV指令在第3行中设置的默认值。
+> 使用这个Dockerfile示例，`CONT_IMG_VER`仍然保留在镜像中，但是它的值将是v1.0.0，因为它是ENV指令在第3行中设置的默认值。
 
 The variable expansion technique in this example allows you to pass arguments
 from the command line and persist them in the final image by leveraging the
 `ENV` instruction. Variable expansion is only supported for [a limited set of
 Dockerfile instructions.](#environment-replacement)
+> 本例中的变量扩展技术允许您从命令行传递参数，并通过利用ENV指令将它们持久化到最终镜像中。
+> 变量扩展仅支持有限的Dockerfile指令集。
 
 ### Predefined ARGs
+> 预定义参数
 
 Docker has a set of predefined `ARG` variables that you can use without a
 corresponding `ARG` instruction in the Dockerfile.
+> Docker有一组预定义的`ARG`变量，您可以在Dockerfile中不使用相应的`ARG`指令的情况下使用这些变量。
 
 - `HTTP_PROXY`
 - `http_proxy`
@@ -2363,6 +2379,7 @@ corresponding `ARG` instruction in the Dockerfile.
 - `no_proxy`
 
 To use these, simply pass them on the command line using the flag:
+> 要使用它们，只需在命令行上使用以下标志传递它们：
 
 ```bash
 --build-arg <varname>=<value>
@@ -2371,9 +2388,12 @@ To use these, simply pass them on the command line using the flag:
 By default, these pre-defined variables are excluded from the output of
 `docker history`. Excluding them reduces the risk of accidentally leaking
 sensitive authentication information in an `HTTP_PROXY` variable.
+> 默认情况下，这些预定义变量从`docker history`的输出中排除。
+> 排除它们可以降低在`HTTP_PROXY`变量中意外泄漏敏感身份验证信息的风险。
 
 For example, consider building the following Dockerfile using
 `--build-arg HTTP_PROXY=http://user:pass@proxy.lon.example.com`
+> 例如，考虑使用`--build-arg HTTP_PROXY=http://user:pass@proxy.lon.example.com`构建下面的Dockerfile
 
 ```dockerfile
 FROM ubuntu
@@ -2384,9 +2404,12 @@ In this case, the value of the `HTTP_PROXY` variable is not available in the
 `docker history` and is not cached. If you were to change location, and your
 proxy server changed to `http://user:pass@proxy.sfo.example.com`, a subsequent
 build does not result in a cache miss.
+> 在这种情况下，`HTTP_PROXY`变量的值在`docker history`记录中不可用，并且不会被缓存。
+> 如果您要更改位置，并且您的代理服务器更改为`http://user:pass@proxy.sfo.example.com`，后续生成不会导致缓存未命中。
 
 If you need to override this behaviour then you may do so by adding an `ARG`
 statement in the Dockerfile as follows:
+> 如果需要重写此行为，则可以通过在Dockerfile中添加`ARG`语句来执行以下操作：
 
 ```dockerfile
 FROM ubuntu
@@ -2396,17 +2419,23 @@ RUN echo "Hello World"
 
 When building this Dockerfile, the `HTTP_PROXY` is preserved in the
 `docker history`, and changing its value invalidates the build cache.
+> 在构建这个Dockerfile时，`HTTP_PROXY`将保留在`docker history`记录中，更改其值将使生成缓存无效。
 
 ### Automatic platform ARGs in the global scope
+> 全局范围内的自动平台参数
 
 This feature is only available when using the [BuildKit](#buildkit) backend.
+> 此功能仅在使用BuildKit后端时可用。
 
 Docker predefines a set of `ARG` variables with information on the platform of
 the node performing the build (build platform) and on the platform of the
 resulting image (target platform). The target platform can be specified with
 the `--platform` flag on `docker build`.
+> Docker预定义了一组`ARG`变量，其中包含执行构建的节点的平台（构建平台）和生成镜像的平台（目标平台）上的信息。
+> 目标平台可以在`docker build`上用`--platform`标志指定。
 
 The following `ARG` variables are set automatically:
+> 以下ARG变量是自动设置的:
 
 - `TARGETPLATFORM` - platform of the build result. Eg `linux/amd64`, `linux/arm/v7`, `windows/amd64`.
 - `TARGETOS` - OS component of TARGETPLATFORM
@@ -2420,6 +2449,8 @@ The following `ARG` variables are set automatically:
 These arguments are defined in the global scope so are not automatically
 available inside build stages or for your `RUN` commands. To expose one of
 these arguments inside the build stage redefine it without value.
+> 这些参数是在全局范围内定义的，因此在生成阶段或`RUN`指令中不会自动可用。
+> 要在构建阶段中公开这些参数之一，请在没有值的情况下重新定义它。
 
 For example:
 
@@ -2430,6 +2461,7 @@ RUN echo "I'm building for $TARGETPLATFORM"
 ```
 
 ### Impact on build caching
+> 对生成缓存的影响
 
 `ARG` variables are not persisted into the built image as `ENV` variables are.
 However, `ARG` variables do impact the build cache in similar ways. If a
@@ -2439,8 +2471,13 @@ particular, all `RUN` instructions following an `ARG` instruction use the `ARG`
 variable implicitly (as an environment variable), thus can cause a cache miss.
 All predefined `ARG` variables are exempt from caching unless there is a
 matching `ARG` statement in the `Dockerfile`.
+> `ARG`变量不会像`ENV`变量一样持久化到内置镜像中。但是，ARG变量确实以类似的方式影响构建缓存。
+> 如果Dockerfile定义了一个`ARG`变量，该变量的值不同于以前的构建，那么在第一次使用时会发生`缓存未命中`，而不是它的定义。
+> 特别是，`ARG`指令后面的所有`RUN`指令都隐式地使用`ARG`变量（作为环境变量），因此可能会导致缓存未命中。
+> 除非`Dockerfile`中有匹配的`ARG`声明，否则所有预定义的`ARG`变量都不会缓存。
 
 For example, consider these two Dockerfile:
+> 例如，考虑这两个 Dockerfile：
 
 ```dockerfile
 FROM ubuntu
@@ -2459,8 +2496,13 @@ cases, the specification on line 2 does not cause a cache miss; line 3 does
 cause a cache miss.`ARG CONT_IMG_VER` causes the RUN line to be identified
 as the same as running `CONT_IMG_VER=<value> echo hello`, so if the `<value>`
 changes, we get a cache miss.
+> 如果在命令行上指定`--build-arg CONT_IMG_VER=<value>`，在这两种情况下，
+> 第2行上的规范都不会导致缓存未命中；第3行会导致缓存未命中。
+> `ARG CONT_IMG_VER`导致RUN line被标识为与`CONT_IMG_VER=<value> echo hello`相同，
+> 因此如果`<value>`发生更改，我们将获得缓存未命中。
 
 Consider another example under the same command line:
+> 考虑同一命令行下的另一个示例:
 
 ```dockerfile
 FROM ubuntu
@@ -2473,9 +2515,12 @@ In this example, the cache miss occurs on line 3. The miss happens because
 the variable's value in the `ENV` references the `ARG` variable and that
 variable is changed through the command line. In this example, the `ENV`
 command causes the image to include the value.
+> 在本例中，缓存未命中发生在第3行。未命中的原因是`ENV`中的变量值引用了`ARG`变量，并且该变量通过命令行更改。
+> 在本例中，ENV命令使镜像包含该值。
 
 If an `ENV` instruction overrides an `ARG` instruction of the same name, like
 this Dockerfile:
+> 如果`ENV`指令重写同名的`ARG`指令，如以下Dockerfile：
 
 ```dockerfile
 FROM ubuntu
@@ -2487,6 +2532,8 @@ RUN echo $CONT_IMG_VER
 Line 3 does not cause a cache miss because the value of `CONT_IMG_VER` is a
 constant (`hello`). As a result, the environment variables and values used on
 the `RUN` (line 4) doesn't change between builds.
+> 第3行不会导致缓存未命中，因为`CONT_IMG_VER`的值是常量（`hello`）。
+> 因此，`RUN`使用的环境变量和值（第4行）在构建之间不会更改。
 
 ## ONBUILD
 
@@ -2499,12 +2546,17 @@ be executed at a later time, when the image is used as the base for
 another build. The trigger will be executed in the context of the
 downstream build, as if it had been inserted immediately after the
 `FROM` instruction in the downstream `Dockerfile`.
+> `ONBUILD`指令向镜像添加一条*触发器*指令，当镜像用作另一个生成的基础时，该指令将在稍后执行。
+> 触发器将在下游构建的上下文中执行，就好像它是在下游`Dockerfile`中的`FROM`指令之后立即插入的一样。
 
 Any build instruction can be registered as a trigger.
+> 任何构建指令都可以注册为触发器。
 
 This is useful if you are building an image which will be used as a base
 to build other images, for example an application build environment or a
 daemon which may be customized with user-specific configuration.
+> 如果您正在构建一个镜像，该镜像将用作构建其他镜像的基础，
+> 例如应用程序构建环境或可以使用特定于用户的配置自定义的守护进程，那么这将非常有用。
 
 For example, if your image is a reusable Python application builder, it
 will require application source code to be added in a particular
@@ -2515,18 +2567,26 @@ each application build. You could simply provide application developers
 with a boilerplate `Dockerfile` to copy-paste into their application, but
 that is inefficient, error-prone and difficult to update because it
 mixes with application-specific code.
+> 例如，如果您的镜像是一个可重用的Python应用程序生成器，
+> 则需要将应用程序源代码添加到特定目录中，并且可能需要在此之后调用构建脚本。
+> 您不能现在就调用`ADD`和`RUN`，因为您还没有访问应用程序源代码的权限，而且每个应用程序构建的源代码都是不同的。
+> 您可以简单地为应用程序开发人员提供一个`Dockerfile`样板文件，以便将粘贴复制到他们的应用程序中，
+> 但这样做效率低，容易出错，而且很难更新，因为它与特定于应用程序的代码混合在一起。
 
 The solution is to use `ONBUILD` to register advance instructions to
 run later, during the next build stage.
+> 解决方案是使用`ONBUILD`注册高级指令，以便稍后在下一个构建阶段运行。
 
 Here's how it works:
 
 1. When it encounters an `ONBUILD` instruction, the builder adds a
    trigger to the metadata of the image being built. The instruction
    does not otherwise affect the current build.
+   > 当遇到`ONBUILD`指令时，生成器会向正在生成的镜像的元数据添加触发器。该指令不会影响当前生成。
 2. At the end of the build, a list of all triggers is stored in the
    image manifest, under the key `OnBuild`. They can be inspected with
    the `docker inspect` command.
+   > 在构建结束时，所有触发器的列表存储在镜像清单的`OnBuild`键下。它们可以通过`docker inspect`命令进行检查。
 3. Later the image may be used as a base for a new build, using the
    `FROM` instruction. As part of processing the `FROM` instruction,
    the downstream builder looks for `ONBUILD` triggers, and executes
@@ -2534,10 +2594,15 @@ Here's how it works:
    fail, the `FROM` instruction is aborted which in turn causes the
    build to fail. If all triggers succeed, the `FROM` instruction
    completes and the build continues as usual.
+   > 稍后，可以使用`FROM`指令将该镜像用作新构建的基础。
+   > 作为处理`FROM`指令的一部分，下游构建器查找`ONBUILD`触发器，并按照注册的顺序执行它们。
+   > 如果任何触发器失败，`FROM`指令将被中止，从而导致生成失败。如果所有触发器都成功，则`FROM`指令完成，构建照常继续。
 4. Triggers are cleared from the final image after being executed. In
    other words they are not inherited by "grand-children" builds.
+   > 触发器在执行后从最终镜像中清除。换句话说，它们不是由“孙子”继承的。
 
 For example you might add something like this:
+> 例如，您可以添加如下内容
 
 ```dockerfile
 ONBUILD ADD . /app/src
@@ -2561,10 +2626,13 @@ STOPSIGNAL signal
 The `STOPSIGNAL` instruction sets the system call signal that will be sent to the container to exit.
 This signal can be a valid unsigned number that matches a position in the kernel's syscall table, for instance 9,
 or a signal name in the format SIGNAME, for instance SIGKILL.
+> `STOPSIGNAL`指令设置将发送到容器以退出的系统调用信号。
+> 此信号可以是与内核syscall表中的位置匹配的有效无符号数字，例如9，或者SIGNAME中的信号名，例如SIGKILL。
 
 ## HEALTHCHECK
 
 The `HEALTHCHECK` instruction has two forms:
+> `HEALTHCHECK`指令有两种形式：
 
 - `HEALTHCHECK [OPTIONS] CMD command` (check container health by running a command inside the container)
 - `HEALTHCHECK NONE` (disable any healthcheck inherited from the base image)
@@ -2573,13 +2641,18 @@ The `HEALTHCHECK` instruction tells Docker how to test a container to check that
 it is still working. This can detect cases such as a web server that is stuck in
 an infinite loop and unable to handle new connections, even though the server
 process is still running.
+> `HEALTHCHECK`指令告诉Docker如何测试容器以检查它是否仍在工作。
+> 这可以检测到一些情况，例如web服务器卡在无限循环中，无法处理新连接，即使服务器进程仍在运行。
 
 When a container has a healthcheck specified, it has a _health status_ in
 addition to its normal status. This status is initially `starting`. Whenever a
 health check passes, it becomes `healthy` (whatever state it was previously in).
 After a certain number of consecutive failures, it becomes `unhealthy`.
+> 当容器指定了healthcheck时，除了正常状态外，它还具有健康状态。此状态最初处于`starting`。
+> 每当健康检查通过时，它就会变为`healthy`（不管它以前处于什么状态）。经过一定数量的连续失败，它变为`unhealthy`。
 
 The options that can appear before `CMD` are:
+> 可以在CMD之前出现的选项有：
 
 - `--interval=DURATION` (default: `30s`)
 - `--timeout=DURATION` (default: `30s`)
@@ -2588,27 +2661,36 @@ The options that can appear before `CMD` are:
 
 The health check will first run **interval** seconds after the container is
 started, and then again **interval** seconds after each previous check completes.
+> 运行状况检查将首先在容器启动后的**interval**秒内运行，然后在前一次检查完成后的**interval**秒内再次运行。
 
 If a single run of the check takes longer than **timeout** seconds then the check
 is considered to have failed.
+> 如果单次运行检查所需时间超过**timeout**秒，则认为检查失败。
 
 It takes **retries** consecutive failures of the health check for the container
 to be considered `unhealthy`.
+> 如果运行状况检查连续失败，则需要重试一次才能将容器视为`unhealthy`。
 
 **start period** provides initialization time for containers that need time to bootstrap.
 Probe failure during that period will not be counted towards the maximum number of retries.
 However, if a health check succeeds during the start period, the container is considered
 started and all consecutive failures will be counted towards the maximum number of retries.
+> **start period**为需要时间引导的容器提供初始化时间。在此期间的探测失败将不计入最大重试次数。
+> 但是，如果运行状况检查在启动期间成功，则认为容器已启动，所有连续失败都将计入最大重试次数。
 
 There can only be one `HEALTHCHECK` instruction in a Dockerfile. If you list
 more than one then only the last `HEALTHCHECK` will take effect.
+> Dockerfile中只能有一条`HEALTHCHECK`指令。如果您列出多个，那么只有最后一个`HEALTHCHECK`才会生效。
 
 The command after the `CMD` keyword can be either a shell command (e.g. `HEALTHCHECK
 CMD /bin/check-running`) or an _exec_ array (as with other Dockerfile commands;
 see e.g. `ENTRYPOINT` for details).
+> CMD关键字后面的命令可以是shell命令（例如`HEALTHCHECK CMD /bin/check-running`）
+> 或exec数组（与其他Dockerfile命令一样；有关详细信息，请参见`ENTRYPOINT`）。
 
 The command's exit status indicates the health status of the container.
 The possible values are:
+> 命令的退出状态指示容器的运行状况。可能的值为：
 
 - 0: success - the container is healthy and ready for use
 - 1: unhealthy - the container is not working correctly
@@ -2616,6 +2698,7 @@ The possible values are:
 
 For example, to check every five minutes or so that a web-server is able to
 serve the site's main page within three seconds:
+> 例如，每五分钟左右检查一次，以便web服务器能够在三秒内为网站主页提供服务：
 
 ```dockerfile
 HEALTHCHECK --interval=5m --timeout=3s \
@@ -2626,9 +2709,12 @@ To help debug failing probes, any output text (UTF-8 encoded) that the command w
 on stdout or stderr will be stored in the health status and can be queried with
 `docker inspect`. Such output should be kept short (only the first 4096 bytes
 are stored currently).
+> 为了帮助调试失败的探测，命令在stdout或stderr上写入的任何输出文本（UTF-8编码）都将存储在运行状况中，
+> 并且可以使用`docker inspect`进行查询。这样的输出应该保持短（当前只存储前4096个字节）。
 
 When the health status of a container changes, a `health_status` event is
 generated with the new status.
+> 当容器的运行状况发生更改时，一个带有新状态的`health_status`事件将生成。
 
 
 ## SHELL
@@ -2641,13 +2727,18 @@ The `SHELL` instruction allows the default shell used for the *shell* form of
 commands to be overridden. The default shell on Linux is `["/bin/sh", "-c"]`, and on
 Windows is `["cmd", "/S", "/C"]`. The `SHELL` instruction *must* be written in JSON
 form in a Dockerfile.
+> `SHELL`指令允许重写命令的shell形式所使用的默认shell。
+> Linux上的默认shell是`["/bin/sh", "-c"]`，Windows上的默认shell是`["cmd", "/S", "/C"]`。
+> SHELL指令必须以JSON格式写入Dockerfile
 
 The `SHELL` instruction is particularly useful on Windows where there are
 two commonly used and quite different native shells: `cmd` and `powershell`, as
 well as alternate shells available including `sh`.
+> `SHELL`指令在Windows上特别有用，在Windows上有两种常用的、完全不同的本机shells:`cmd`和`powershell`，以及可选shell，包括`sh`。
 
 The `SHELL` instruction can appear multiple times. Each `SHELL` instruction overrides
 all previous `SHELL` instructions, and affects all subsequent instructions. For example:
+> `SHELL`指令可以出现多次。每一条`SHELL`指令都会覆盖所有以前的`SHELL`指令，并影响所有后续指令。例如：
 
 ```dockerfile
 FROM microsoft/windowsservercore
@@ -2669,15 +2760,18 @@ RUN echo hello
 
 The following instructions can be affected by the `SHELL` instruction when the
 *shell* form of them is used in a Dockerfile: `RUN`, `CMD` and `ENTRYPOINT`.
+> 当在Dockerfile中使用*shell*形式时，以下指令可能会受到`SHELL`指令的影响：`RUN`、`CMD`和`ENTRYPOINT`。
 
 The following example is a common pattern found on Windows which can be
 streamlined by using the `SHELL` instruction:
+> 下面的示例是Windows上的常见模式，可以使用`SHELL`指令对其进行优化：
 
 ```dockerfile
 RUN powershell -command Execute-MyCmdlet -param1 "c:\foo.txt"
 ```
 
 The command invoked by docker will be:
+> docker调用的命令是：
 
 ```powershell
 cmd /S /C powershell -command Execute-MyCmdlet -param1 "c:\foo.txt"
@@ -2686,9 +2780,12 @@ cmd /S /C powershell -command Execute-MyCmdlet -param1 "c:\foo.txt"
 This is inefficient for two reasons. First, there is an un-necessary cmd.exe command
 processor (aka shell) being invoked. Second, each `RUN` instruction in the *shell*
 form requires an extra `powershell -command` prefixing the command.
+> 这是效率低下的两个原因。首先，有一个不必要的cmd.exe正在调用的命令处理器（又名shell）。
+> 其次，shell形式的每个`RUN`指令都需要一个额外的`powershell -command`作为该命令的前缀。
 
 To make this more efficient, one of two mechanisms can be employed. One is to
 use the JSON form of the RUN command such as:
+> 为了提高效率，可以采用两种机制之一。一种是使用RUN命令的JSON格式，例如：
 
 ```dockerfile
 RUN ["powershell", "-command", "Execute-MyCmdlet", "-param1 \"c:\\foo.txt\""]
@@ -2699,6 +2796,8 @@ it does require more verbosity through double-quoting and escaping. The alternat
 mechanism is to use the `SHELL` instruction and the *shell* form,
 making a more natural syntax for Windows users, especially when combined with
 the `escape` parser directive:
+> 而JSON形式是明确的，没有使用非必要的cmd.exe, 它确实更加冗长因为需要通过双重引用和转义。
+> 另一种机制是使用`SHELL`指令和*shell*形式，为Windows用户提供更自然的语法，特别是与escape parser指令结合使用时：
 
 ```dockerfile
 # escape=`
@@ -2750,18 +2849,23 @@ PS E:\docker\build\shell>
 The `SHELL` instruction could also be used to modify the way in which
 a shell operates. For example, using `SHELL cmd /S /C /V:ON|OFF` on Windows, delayed
 environment variable expansion semantics could be modified.
+> `SHELL`指令还可以用来修改shell的操作方式。
+> 例如，在Windows上使用`SHELL cmd /S /C /V:ON|OFF`，可以修改延迟的环境变量扩展语义。
 
 The `SHELL` instruction can also be used on Linux should an alternate shell be
 required such as `zsh`, `csh`, `tcsh` and others.
+> 如果需要另一个SHELL，如`zsh`、`csh`、`tcsh`和其他，也可以在Linux上使用`SHELL`指令。
 
 ## External implementation features
 
 This feature is only available when using the  [BuildKit](#buildkit) backend.
+> 此功能仅在使用BuildKit后端时可用。
 
 Docker build supports experimental features like cache mounts, build secrets and
 ssh forwarding that are enabled by using an external implementation of the
 builder with a syntax directive. To learn about these features,
 [refer to the documentation in BuildKit repository](https://github.com/moby/buildkit/blob/master/frontend/dockerfile/docs/experimental.md).
+> Docker build支持实验性功能，如缓存装载、构建机密和ssh转发，这些功能是通过使用带有语法指令的生成器的外部实现启用的。
 
 ## Dockerfile examples
 
