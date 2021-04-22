@@ -204,35 +204,48 @@ for the following types of use case:
 - Sharing configuration files from the host machine to containers. This is how
   Docker provides DNS resolution to containers by default, by mounting
   `/etc/resolv.conf` from the host machine into each container.
+  > 将配置文件从主机共享到容器。这就是Docker通过将`/etc/resolv.conf`从主机装载到每个容器中，
+  > 默认情况下为容器提供DNS解析的方式。
 
 - Sharing source code or build artifacts between a development environment on
   the Docker host and a container. For instance, you may mount a Maven `target/`
   directory into a container, and each time you build the Maven project on the
   Docker host, the container gets access to the rebuilt artifacts.
+  > 在Docker主机上的开发环境和容器之间共享源代码或构建工件。例如，您可以将Maven`target/`目录装入容器中，
+  > 并且每次在Docker主机上构建Maven项目时，容器都可以访问重建的工件。
 
   If you use Docker for development this way, your production Dockerfile would
   copy the production-ready artifacts directly into the image, rather than
   relying on a bind mount.
+  > 如果以这种方式使用Docker进行开发，那么生产Dockerfile可以将生产就绪的工件直接复制到映像中，而不是依赖于绑定装载。
 
 - When the file or directory structure of the Docker host is guaranteed to be
   consistent with the bind mounts the containers require.
+  > 当Docker主机的文件或目录结构保证与容器所需的绑定装载一致时。
 
 ## Good use cases for tmpfs mounts
+> tmpfs挂载的良好用例
 
 `tmpfs` mounts are best used for cases when you do not want the data to persist
 either on the host machine or within the container. This may be for security
 reasons or to protect the performance of the container when your application
 needs to write a large volume of non-persistent state data.
+> 当您不希望数据在主机上或容器中持久时，`tmpfs`装载最适合于这种情况。
+> 这可能是出于安全原因，或者在应用程序需要编写大量非持久状态数据时保护容器的性能。
 
 ## Tips for using bind mounts or volumes
+> 使用绑定装载或卷的提示
 
 If you use either bind mounts or volumes, keep the following in mind:
+> 如果使用绑定装载或卷，请记住以下几点：
 
 - If you mount an **empty volume** into a directory in the container in which files
   or directories exist, these files or directories are propagated (copied)
   into the volume. Similarly, if you start a container and specify a volume which
   does not already exist, an empty volume is created for you.
   This is a good way to pre-populate data that another container needs.
+  > 如果将**空卷**装入容器中的目录（该目录下已存在文件或目录的），则这些文件或目录将传播（复制）到卷中。
+  > 类似地，如果启动容器并指定一个不存在的卷，则会为您创建一个空卷。这是一种很好的方法，可以预先填充另一个容器需要的数据。
 
 - If you mount a **bind mount or non-empty volume** into a directory in the container
   in which some files or directories exist, these files or directories are
@@ -241,6 +254,9 @@ If you use either bind mounts or volumes, keep the following in mind:
   obscured by the contents of the USB drive until the USB drive were unmounted.
   The obscured files are not removed or altered, but are not accessible while the
   bind mount or volume is mounted.
+  > 如果将**绑定装载或非空卷**装载到存在某些文件或目录的容器中的目录中，这些文件或目录将被装载遮挡，
+  > 就像将文件保存到Linux主机上的`/mnt`中，然后将USB驱动器装载到`/mnt`中一样。
+  > 在卸下USB驱动器之前，`/mnt`的内容将被USB驱动器的内容遮挡。在装载绑定装载或卷时，隐藏的文件不会被删除或更改，但无法访问。
 
 ## Next steps
 
