@@ -59,41 +59,56 @@ If you need to specify volume driver options, you must use `--mount`.
 - **`-v` or `--volume`**: Consists of three fields, separated by colon characters
   (`:`). The fields must be in the correct order, and the meaning of each field
   is not immediately obvious.
+  > 由三个字段组成，用冒号字符（：）分隔。字段的顺序必须正确，并且每个字段的含义不是很明显。
   - In the case of named volumes, the first field is the name of the volume, and is
     unique on a given host machine. For anonymous volumes, the first field is
     omitted.
+    > 对于命名卷，第一个字段是卷的名称，并且在给定的主机上是唯一的。对于匿名卷，省略第一个字段。
   - The second field is the path where the file or directory are mounted in
     the container.
+    > 第二个字段是在容器中装入文件或目录的路径。
   - The third field is optional, and is a comma-separated list of options, such
     as `ro`. These options are discussed below.
+    > 第三个字段是可选的，是以逗号分隔的选项列表，例如ro。下面讨论这些选项
 
 - **`--mount`**: Consists of multiple key-value pairs, separated by commas and each
   consisting of a `<key>=<value>` tuple. The `--mount` syntax is more verbose
   than `-v` or `--volume`, but the order of the keys is not significant, and
   the value of the flag is easier to understand.
+  > 由多个键值对组成，用逗号分隔，每个键值对由一个`<key>=<value>`元组组成。
+  > `--mount`语法比`-v`或`--volume`更详细，但是键的顺序并不重要，而且标志的值更容易理解。
   - The `type` of the mount, which can be [`bind`](bind-mounts.md), `volume`, or
     [`tmpfs`](tmpfs.md). This topic discusses volumes, so the type is always
     `volume`.
+    > 装载的类型，可以是`bind`、`volume`或`tmpfs`。本主题讨论volumes，因此类型始终为volumes。
   - The `source` of the mount. For named volumes, this is the name of the volume.
     For anonymous volumes, this field is omitted. May be specified as `source`
     or `src`.
+    > 装载的源`source`。对于命名卷，这是卷的名称。对于匿名卷，省略此字段。可以指定为`source`或`src`。
   - The `destination` takes as its value the path where the file or directory
     is mounted in the container. May be specified as `destination`, `dst`,
     or `target`.
+    > `destination`(目标)将文件或目录装入容器的路径作为其值。可以指定为`destination`、`dst`或`target`。
   - The `readonly` option, if present, causes the bind mount to be [mounted into
     the container as read-only](#use-a-read-only-volume).
+    > `readonly`选项（如果存在）将导致绑定装载以只读方式装载到容器中。
   - The `volume-opt` option, which can be specified more than once, takes a
     key-value pair consisting of the option name and its value.
+    > `volume-opt`选项可以多次指定，它采用由选项名及其值组成的键值对。
 
-> Escape values from outer CSV parser
+> Escape values from outer CSV parser  
+> 从外部CSV解析器转义值
 >
 > If your volume driver accepts a comma-separated list as an option,
 > you must escape the value from the outer CSV parser. To escape a `volume-opt`,
 > surround it with double quotes (`"`) and surround the entire mount parameter
-> with single quotes (`'`).
+> with single quotes (`'`).  
+> 如果卷驱动程序接受逗号分隔列表作为选项，则必须从外部CSV解析器转义该值。
+> 要转义`volume-opt`，请用双引号(`"`)将其括起来，并用单引号 (`'`)将整个mount参数括起来。
 >
 > For example, the `local` driver accepts mount options as a comma-separated
-> list in the `o` parameter. This example shows the correct way to escape the list.
+> list in the `o` parameter. This example shows the correct way to escape the list.  
+> 例如，`本地`驱动程序在`o`参数中接受以逗号分隔的列表形式的装载选项。此示例显示了转义列表的正确方法。
 >
 >     $ docker service create \
 >         --mount 'type=volume,src=<VOLUME-NAME>,dst=<CONTAINER-PATH>,volume-driver=local,volume-opt=type=nfs,volume-opt=device=<nfs-server>:<nfs-path>,"volume-opt=o=addr=<nfs-address>,vers=4,soft,timeo=180,bg,tcp,rw"'
@@ -104,18 +119,23 @@ If you need to specify volume driver options, you must use `--mount`.
 
 The examples below show both the `--mount` and `-v` syntax where possible, and
     `--mount` is presented first.
+> 下面的示例在可能的情况下显示了`--mount`和`-v`语法，并且`--mount`是首先显示的。
 
 ### Differences between `-v` and `--mount` behavior
+> `-v`和`--mount`行为之间的差异
 
 As opposed to bind mounts, all options for volumes are available for both
 `--mount` and `-v` flags.
+> 与绑定装载不同，卷的所有选项都可用于`--mount`和`-v`标志。
 
 When using volumes with services, only `--mount` is supported.
+> 将卷与服务一起使用时，只支持`--mount`。
 
 ## Create and manage volumes
 
 Unlike a bind mount, you can create and manage volumes outside the scope of any
 container.
+> 与绑定装载不同，您可以在任何容器的作用域之外创建和管理卷。
 
 **Create a volume**:
 
@@ -154,14 +174,17 @@ $ docker volume rm my-vol
 ```
 
 ## Start a container with a volume
+> 携带卷启动容器
 
 If you start a container with a volume that does not yet exist, Docker creates
 the volume for you. The following example mounts the volume `myvol2` into
 `/app/` in the container.
+> 如果启动的容器中有一个尚不存在的卷，Docker将为您创建该卷。下面的示例将卷`myvol2`装载到容器中的`/app/`中。
 
 The `-v` and `--mount` examples below produce the same result. You can't run
 them both unless you remove the `devtest` container and the `myvol2` volume
 after running the first one.
+> 下面的`-v`和`--mount`示例产生相同的结果。除非在运行第一个容器之后删除`devtest`容器和`myvol2`卷，否则不能同时运行它们。
 
 <ul class="nav nav-tabs">
   <li class="active"><a data-toggle="tab" data-group="mount" data-target="#mount-run"><code>--mount</code></a></li>
@@ -192,6 +215,7 @@ $ docker run -d \
 
 Use `docker inspect devtest` to verify that the volume was created and mounted
 correctly. Look for the `Mounts` section:
+> 使用`docker inspect devtest`验证卷是否已正确创建和装入。查找`Mounts`部分：
 
 ```json
 "Mounts": [
@@ -210,9 +234,11 @@ correctly. Look for the `Mounts` section:
 
 This shows that the mount is a volume, it shows the correct source and
 destination, and that the mount is read-write.
+> 这表明装载是一个卷，它显示了正确的源和目标，并且装载是读写的。
 
 Stop the container and remove the volume. Note volume removal is a separate
 step.
+> 停止容器并移除卷。注意：卷删除是一个单独的步骤。
 
 ```bash
 $ docker container stop devtest
@@ -223,8 +249,10 @@ $ docker volume rm myvol2
 ```
 
 ## Use a volume with docker-compose
+> 通过docker-compose使用卷
 
 A single docker compose service with a volume looks like this:
+> 具有卷的单个docker compose服务如下所示：
 
 ```yaml
 version: "{{ site.compose_file_v3 }}"
@@ -239,9 +267,11 @@ volumes:
 
 On the first invocation of `docker-compose up` the volume will be created. The same
 volume will be reused on following invocations.
+> 在第一次调用`docker-compose up`时，将创建卷。相同的卷将在以下调用中重用。
 
 A volume may be created directly outside of compose with `docker volume create` and
 then referenced inside `docker-compose.yml` as follows:
+> 卷可以直接在compose外部通过`docker volume create`创建，然后在docker内部引用docker-compose.yml` 具体如下：
 
 ```yaml
 version: "{{ site.compose_file_v3 }}"
@@ -257,6 +287,7 @@ volumes:
 
 For more information about using volumes with compose see
 [the compose reference](../compose/compose-file/compose-file-v3.md#volume-configuration-reference).
+> 通过docker-compose使用卷的更多详情请参考[the compose reference](https://docs.docker.com/compose/compose-file/compose-file-v3/#volume-configuration-reference)
 
 ### Start a service with volumes
 
@@ -264,9 +295,13 @@ When you start a service and define a volume, each service container uses its ow
 local volume. None of the containers can share this data if you use the `local`
 volume driver, but some volume drivers do support shared storage. Docker for AWS and
 Docker for Azure both support persistent storage using the Cloudstor plugin.
+> 启动服务并定义卷时，每个服务容器都使用自己的本地卷。
+> 如果使用本地卷驱动程序，则所有容器都无法共享此数据，但某些卷驱动程序确实支持共享存储。
+> AWS的Docker和Azure的Docker都支持使用Cloudstor插件的持久存储。
 
 The following example starts a `nginx` service with four replicas, each of which
 uses a local volume called `myvol2`.
+> 下面的示例使用四个副本启动`nginx`服务，每个副本使用一个名为`myvol2`的本地卷。
 
 ```bash
 $ docker service create -d \
@@ -277,6 +312,7 @@ $ docker service create -d \
 ```
 
 Use `docker service ps devtest-service` to verify that the service is running:
+> 使用docker service ps devtest service验证服务是否正在运行：
 
 ```bash
 $ docker service ps devtest-service
@@ -286,6 +322,7 @@ ID                  NAME                IMAGE               NODE                
 ```
 
 Remove the service, which stops all its tasks:
+> 删除服务，该服务将停止其所有任务：
 
 ```bash
 $ docker service rm devtest-service
@@ -293,27 +330,36 @@ $ docker service rm devtest-service
 
 Removing the service does not remove any volumes created by the service.
 Volume removal is a separate step.
+> 删除该服务不会删除该服务创建的任何卷。卷删除是一个单独的步骤。
 
 #### Syntax differences for services
+> 服务的语法差异
 
 The `docker service create` command does not support the `-v` or `--volume` flag.
 When mounting a volume into a service's containers, you must use the `--mount`
 flag.
+> `docker service create`命令不支持`-v`或`--volume`标志。将卷装入服务容器时，必须使用`--mount`标志。
 
 ### Populate a volume using a container
+> 使用容器填充卷
 
 If you start a container which creates a new volume, as above, and the container
 has files or directories in the directory to be mounted (such as `/app/` above),
 the directory's contents are copied into the volume. The container then
 mounts and uses the volume, and other containers which use the volume also
 have access to the pre-populated content.
+> 如果启动一个创建新卷的容器（如上所述），并且该容器在要装入的目录（如上`/app/`）中有文件或目录，
+> 则该目录的内容将复制到卷中。然后容器装载并使用该卷，使用该卷的其他容器也可以访问预填充的内容。
 
 To illustrate this, this example starts an `nginx` container and populates the
 new volume `nginx-vol` with the contents of the container's
 `/usr/share/nginx/html` directory, which is where Nginx stores its default HTML
 content.
+> 为了说明这一点，本例启动一个`nginx`容器，
+> 并用容器的`/usr/share/nginx/html`目录的内容填充新的卷`nginx-vol`，nginx在其中存储其默认的html内容。
 
 The `--mount` and `-v` examples have the same end result.
+> `--mount`和`-v`示例具有相同的最终结果。
 
 <ul class="nav nav-tabs">
   <li class="active"><a data-toggle="tab" data-group="mount" data-target="#mount-empty-run"><code>--mount</code></a></li>
@@ -344,7 +390,7 @@ $ docker run -d \
 
 After running either of these examples, run the following commands to clean up
 the containers and volumes.  Note volume removal is a separate step.
-
+> 在运行这些示例中的任何一个之后，运行以下命令来清理容器和卷。注：卷删除是一个单独的步骤。
 
 ```bash
 $ docker container stop nginxtest
@@ -355,19 +401,26 @@ $ docker volume rm nginx-vol
 ```
 
 ## Use a read-only volume
+> 使用只读卷
 
 For some development applications, the container needs to write into the bind
 mount so that changes are propagated back to the Docker host. At other times,
 the container only needs read access to the data. Remember that multiple
 containers can mount the same volume, and it can be mounted read-write for some
 of them and read-only for others, at the same time.
+> 对于某些开发应用程序，容器需要写入绑定装载，以便将更改传播回Docker主机。
+> 在其他时候，容器只需要对数据进行读访问。请记住，多个容器可以装载同一个卷，
+> 其中一些容器可以以读写方式装载，其他容器可以以只读方式同时装载。
 
 This example modifies the one above but mounts the directory as a read-only
 volume, by adding `ro` to the (empty by default) list of options, after the
 mount point within the container. Where multiple options are present, separate
 them by commas.
+> 此示例修改了上面的示例，但通过将`ro`添加到（默认情况下为空）选项列表中，在容器内的装入点之后，将
+> 目录作为只读卷装入。如果存在多个选项，请用逗号分隔它们。
 
 The `--mount` and `-v` examples have the same result.
+> `--mount`和`-v`示例具有相同的最终结果。
 
 <ul class="nav nav-tabs">
   <li class="active"><a data-toggle="tab" data-group="mount" data-target="#mount-readonly"><code>--mount</code></a></li>
@@ -398,6 +451,7 @@ $ docker run -d \
 
 Use `docker inspect nginxtest` to verify that the readonly mount was created
 correctly. Look for the `Mounts` section:
+> 使用`docker inspect nginxtest`验证是否正确创建了只读装载。查找`Mounts`部分：
 
 ```json
 "Mounts": [
@@ -416,6 +470,7 @@ correctly. Look for the `Mounts` section:
 
 Stop and remove the container, and remove the volume. Volume removal is a
 separate step.
+> 停止并移除容器，然后移除卷。卷删除是一个单独的步骤。
 
 ```bash
 $ docker container stop nginxtest
@@ -426,46 +481,61 @@ $ docker volume rm nginx-vol
 ```
 
 ## Share data among machines
+> 在机器之间共享数据
 
 When building fault-tolerant applications, you might need to configure multiple
 replicas of the same service to have access to the same files.
+> 在构建容错应用程序时，可能需要配置同一服务的多个副本以访问相同的文件。
 
-![shared storage](images/volumes-shared-storage.svg)
+![shared storage](https://docs.docker.com/storage/images/volumes-shared-storage.svg)
 
 There are several ways to achieve this when developing your applications.
 One is to add logic to your application to store files on a cloud object
 storage system like Amazon S3. Another is to create volumes with a driver that
 supports writing files to an external storage system like NFS or Amazon S3.
+> 在开发应用程序时，有几种方法可以实现这一点。一种是向应用程序添加逻辑，将文件存储在云对象存储系统（如amazons3）上。
+> 另一种方法是使用支持将文件写入NFS或amazons3等外部存储系统的驱动程序创建卷。
 
 Volume drivers allow you to abstract the underlying storage system from the
 application logic. For example, if your services use a volume with an NFS
 driver, you can update the services to use a different driver, as an example to
 store data in the cloud, without changing the application logic.
+> 卷驱动程序允许您从应用程序逻辑中抽象底层存储系统。例如，如果您的服务使用带有NFS驱动程序的卷，
+> 您可以更新服务以使用不同的驱动程序，例如在云中存储数据，而无需更改应用程序逻辑。
 
 ## Use a volume driver
+> 使用卷驱动程序
 
 When you create a volume using `docker volume create`, or when you start a
 container which uses a not-yet-created volume, you can specify a volume driver.
 The following examples use the `vieux/sshfs` volume driver, first when creating
 a standalone volume, and then when starting a container which creates a new
 volume.
+> 当你使用`docker volume create`创建卷时，或启动使用尚未创建的卷的容器时，可以指定卷驱动程序。
+> 以下示例首先在创建独立卷时使用`vieux/sshfs`卷驱动程序，然后在启动创建新卷的容器时使用。
 
 ### Initial set-up
+> 初始化设置
 
 This example assumes that you have two nodes, the first of which is a Docker
 host and can connect to the second using SSH.
+> 本例假设你有两个节点，第一个节点是Docker主机，可以使用SSH连接到第二个节点。
 
 On the Docker host, install the `vieux/sshfs` plugin:
+> 在Docker主机上，安装`vieux/sshfs`插件：
 
 ```bash
 $ docker plugin install --grant-all-permissions vieux/sshfs
 ```
 
 ### Create a volume using a volume driver
+> 使用卷驱动程序创建一个卷
 
 This example specifies a SSH password, but if the two hosts have shared keys
 configured, you can omit the password. Each volume driver may have zero or more
 configurable options, each of which is specified using an `-o` flag.
+> 本例指定了SSH密码，但是如果两个主机配置了共享密钥，则可以省略该密码。
+> 每个卷驱动程序可能有零个或多个可配置选项，每个选项都使用`-o`标志指定。
 
 ```bash
 $ docker volume create --driver vieux/sshfs \
@@ -475,11 +545,15 @@ $ docker volume create --driver vieux/sshfs \
 ```
 
 ### Start a container which creates a volume using a volume driver
+> 启动使用卷驱动程序创建卷的容器
 
 This example specifies a SSH password, but if the two hosts have shared keys
 configured, you can omit the password. Each volume driver may have zero or more
 configurable options. **If the volume driver requires you to pass options, you
 must use the `--mount` flag to mount the volume, rather than `-v`.**
+> 本例指定了SSH密码，但是如果两个主机配置了共享密钥，则可以省略该密码。
+> 每个卷驱动程序可能有零个或多个可配置选项。
+> **如果卷驱动程序要求您传递选项，则必须使用`--mount`标志来装载卷，而不是`-v`**。
 
 ```bash
 $ docker run -d \
@@ -490,8 +564,14 @@ $ docker run -d \
 ```
 
 ### Create a service which creates an NFS volume
+> 创建一个其创建了NFS卷的服务
 
-This example shows how you can create an NFS volume when creating a service. This example uses `10.0.0.10` as the NFS server and `/var/docker-nfs` as the exported directory on the NFS server. Note that the volume driver specified is `local`.
+This example shows how you can create an NFS volume when creating a service. 
+This example uses `10.0.0.10` as the NFS server 
+and `/var/docker-nfs` as the exported directory on the NFS server. 
+Note that the volume driver specified is `local`.
+> 此示例演示如何在创建服务时创建NFS卷。本例使用`10.0.0.10`作为NFS服务器，
+> `/var/docker-nfs`作为NFS服务器上的导出目录。请注意，指定的卷驱动程序是`local`。
 
 #### NFSv3
 ```bash
@@ -512,6 +592,8 @@ docker service create -d \
 ### Create CIFS/Samba volumes
 
 You can mount a Samba share directly in docker without configuring a mount point on your host.
+> 您可以直接在docker中装载Samba共享，而无需在主机上配置装载点。
+
 ```bash
 docker volume create \
 	--driver local \
@@ -521,25 +603,33 @@ docker volume create \
 	--name cif-volume
 ```
 Notice the `addr` option is required if using a hostname instead of an IP so docker can perform the hostname lookup.
+> 请注意，如果使用主机名而不是IP，则需要`addr`选项，以便docker可以执行主机名查找。
 
 ## Backup, restore, or migrate data volumes
+> 备份、恢复或迁移数据卷
 
 Volumes are useful for backups, restores, and migrations. Use the
 `--volumes-from` flag to create a new container that mounts that volume.
+> 卷对于备份、恢复和迁移非常有用。使用`--volumes from`标志创建一个装载该卷的新容器。
 
 ### Backup a container
 
 For example, create a new container named `dbstore`:
+> 例如，创建一个名为`dbstore`的新容器：
 
 ```
 $ docker run -v /dbdata --name dbstore ubuntu /bin/bash
 ```
 
 Then in the next command, we:
+> 然后在下一个命令中，我们：
 
 - Launch a new container and mount the volume from the `dbstore` container
+  > 启动一个新容器并从`dbstore`容器装载卷
 - Mount a local host directory as `/backup`
+  > 将本地主机目录装载为`/backup`
 - Pass a command that tars the contents of the `dbdata` volume to a `backup.tar` file inside our `/backup` directory.
+  > 传递一个命令来打包`dbdata`卷的内容到一个`backup.tar`文件到我们的`/backup`目录
 
 ```
 $ docker run --rm --volumes-from dbstore -v $(pwd):/backup ubuntu tar cvf /backup/backup.tar /dbdata
@@ -547,19 +637,24 @@ $ docker run --rm --volumes-from dbstore -v $(pwd):/backup ubuntu tar cvf /backu
 
 When the command completes and the container stops, we are left with a backup of
 our `dbdata` volume.
+> 当命令完成并且容器停止时，我们留下了`dbdata`卷的备份。
 
 ### Restore container from backup
+> 从备份还原容器
 
 With the backup just created, you can restore it to the same container, or
 another that you made elsewhere.
+> 使用刚刚创建的备份，您可以将其还原到同一个容器，或其他地方创建的容器。
 
 For example, create a new container named `dbstore2`:
+> 例如，创建一个名为`dbstore2`的新容器:
 
 ```
 $ docker run -v /dbdata --name dbstore2 ubuntu /bin/bash
 ```
 
 Then un-tar the backup file in the new container`s data volume:
+> 然后解压缩备份文件到一个新容器的数据卷:
 
 ```
 $ docker run --rm --volumes-from dbstore2 -v $(pwd):/backup ubuntu bash -c "cd /dbdata && tar xvf /backup/backup.tar --strip 1"
@@ -567,20 +662,27 @@ $ docker run --rm --volumes-from dbstore2 -v $(pwd):/backup ubuntu bash -c "cd /
 
 You can use the techniques above to automate backup, migration and restore
 testing using your preferred tools.
+> 你可以使用上述技术，使用你喜欢的工具自动化备份、迁移和恢复测试。
 
 ## Remove volumes
 
 A Docker data volume persists after a container is deleted. There are two types
 of volumes to consider:
+> 删除容器后，Docker数据卷仍然存在。有两种类型的卷需要考虑：
 
 - **Named volumes** have a specific source from outside the container, for example `awesome:/bar`.
+  > **命名卷**具有来自容器外部的特定源，例如`awesome:/bar`。
 - **Anonymous volumes** have no specific source so when the container is deleted, instruct the Docker Engine daemon to remove them.
+  > **匿名卷**没有特定的源，因此在删除容器时，请指示Docker引擎守护程序删除它们。
 
 ### Remove anonymous volumes
+> 删除匿名卷
 
 To automatically remove anonymous volumes, use the `--rm` option. For example,
 this command creates an anonymous `/foo` volume. When the container is removed,
 the Docker Engine removes the `/foo` volume but not the `awesome` volume.
+> 要自动删除匿名卷，请使用`--rm`选项。例如，此命令创建匿名卷`/foo`。
+> 当容器被移除时，Docker引擎移除`/foo`卷而不是`awesome`卷。
 
 ```
 $ docker run --rm -v /foo -v awesome:/bar busybox top
@@ -589,26 +691,11 @@ $ docker run --rm -v /foo -v awesome:/bar busybox top
 ### Remove all volumes
 
 To remove all unused volumes and free up space:
+> 要删除所有未使用的卷并释放空间，请执行以下操作：
 
 ```
 $ docker volume prune
 ```
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 ## Next steps
 
