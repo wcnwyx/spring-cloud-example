@@ -134,8 +134,8 @@ mounts is to think about where the data lives on the Docker host.
   > 它可以在容器的生存期内由容器使用，以存储非持久状态或敏感信息。
   > 例如，在内部，swarm服务使用`tmpfs`挂载将机密`secrets`挂载到服务的容器中。
 
-- **[named pipes](https://docs.microsoft.com/en-us/windows/desktop/ipc/named-pipes)**: An `npipe`
-  mount can be used for communication between the Docker host and a container. Common use case is
+- **[named pipes](https://docs.microsoft.com/en-us/windows/desktop/ipc/named-pipes)**: 
+  An `npipe`  mount can be used for communication between the Docker host and a container. Common use case is
   to run a third-party tool inside of a container and connect to the Docker Engine API using a named pipe.
   > `npipe`挂载可以用于Docker主机和容器之间的通信。常见的用例是在容器内运行第三方工具，并使用named pipe(命名管道)连接到Docker引擎API。
 
