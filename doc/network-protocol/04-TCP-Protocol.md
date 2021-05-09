@@ -292,7 +292,7 @@ B也可能会发送一些数据），确认号必须重复上次已经发过的a
 2. 收到对端的FIN报文，发出响应ACK报文，进入**CLOSING**状态
 3. 收到ACK报文，进入**TIME-WAIT**状态
 
-##TCP的拥塞控制
+##五：TCP的拥塞控制
 TCP进行拥塞控制的算法有四种：**慢开始（slow-start）、拥塞避免（congestion avoidance）、快重传（fast retransmit）
 和快恢复（fast recovery）**，拥塞控制也叫**基于窗口的拥塞控制**。发送方会位置一个叫做**拥塞窗口cwnd（congestion window）**
 的状态变量。拥塞窗口的大小取决于网络的拥塞程度，并且动态的在变化。**发送方让自己的发送窗口等于拥塞窗口**。  
