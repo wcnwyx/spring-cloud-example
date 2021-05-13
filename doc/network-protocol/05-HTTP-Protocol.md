@@ -47,10 +47,12 @@ HTTP协议是**无状态的（stateless）**，也就是说，同一个客户第
 ![HTTP connection manage 3 series persistent](image/HTTP_connection_manage_3_series_persistent.png)  
 
 ####4.持久链接+并行处理（管道化持久连接）
-即节约了建联和慢启动的时延，又并行增加了传输效率。如下图所示：
-![HTTP connection manage 4 parallel persistent](image/HTTP_connection_manage_4_parallel_persistent.png)
+即节约了建链和慢启动的时延，又并行增加了传输效率。如下图所示：  
+![HTTP connection manage 4 parallel persistent](image/HTTP_connection_manage_4_parallel_persistent.png)  
 正常情况下浏览器是会创建多条持久链接，然后每个持久连接上都可以并行处理，这样效率是最高的。
 
+HTTP1.0默认使用的是非持久连接，后续添加了Connection:Keep-Alive首部来支持持久连接。  
+HTTP1.1则是默认持久连接。通过Connection:close首部来关闭连接。
 
 ##三：HTTP报文结构
 HTTP有两类报文：
