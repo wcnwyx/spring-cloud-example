@@ -1066,32 +1066,41 @@ write operations are designed to be fast, though reads are faster than
 writes. The reason for this is that in the case of reads, ZooKeeper can
 serve older data, which in turn is due to ZooKeeper's consistency
 guarantees:
+> ZooKeeper是一种高性能、可扩展的服务。尽管读操作比写操作快，但读操作和写操作都设计得很快。
+> 原因是在读取的情况下，ZooKeeper可以提供较旧的数据，而这又是由于ZooKeeper的一致性保证：
 
 * *Sequential Consistency* :
     Updates from a client will be applied in the order that they
     were sent.
+  > *顺序一致性* ： 来自客户端的更新将按发送顺序应用。
 
 * *Atomicity* :
     Updates either succeed or fail -- there are no partial
     results.
+  > *原子性*：更新要么成功要么失败——没有部分结果。
 
 * *Single System Image* :
     A client will see the same view of the service regardless of
     the server that it connects to.
+  > *单个系统映像*：无论连接到哪个服务器，客户机都将看到相同的服务视图。
 
 * *Reliability* :
     Once an update has been applied, it will persist from that
     time forward until a client overwrites the update. This guarantee
     has two corollaries:
+  > 可靠性：一旦应用了更新，它将从那时起一直存在，直到客户端覆盖更新。该担保有两个推论：
     1. If a client gets a successful return code, the update will
       have been applied. On some failures (communication errors,
       timeouts, etc) the client will not know if the update has
       applied or not. We take steps to minimize the failures, but the
       guarantee is only present with successful return codes.
       (This is called the _monotonicity condition_ in Paxos.)
+       > 如果客户机获得成功的返回代码，则已应用更新。对于某些故障（通信错误、超时等），
+       > 客户端将不知道是否应用了更新。我们采取措施尽量减少失败，但保证只有成功返回代码(这在Paxos中称为单调条件。）
     1. Any updates that are seen by the client, through a read
       request or successful update, will never be rolled back when
       recovering from server failures.
+       > 当从服务器故障中恢复时，客户端通过读取请求或成功更新看到的任何更新都不会回滚。
 
 * *Timeliness* :
     The clients view of the system is guaranteed to be up-to-date
