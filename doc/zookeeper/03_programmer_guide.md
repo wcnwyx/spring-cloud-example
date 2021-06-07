@@ -1107,17 +1107,22 @@ guarantees:
     within a certain time bound (on the order of tens of seconds).
     Either system changes will be seen by a client within this bound, or
     the client will detect a service outage.
+    > 及时性：保证系统的客户端视图在一定的时间范围内是最新的（大约几十秒）。
+    >在这个范围内的客户机将看到系统更改，或者客户机将检测到服务中断。
 
 Using these consistency guarantees it is easy to build higher level
 functions such as leader election, barriers, queues, and read/write
 revocable locks solely at the ZooKeeper client (no additions needed to
 ZooKeeper). See [Recipes and Solutions](recipes.html)
 for more details.
+> 使用这些一致性保证，只在ZooKeeper客户机上（无需ZooKeeper添加内容）就可以轻松构建更高级别的功能，
+> 如领导人选举、屏障、队列和读/写可撤销锁。有关更多详细信息，请参阅[Recipes and Solutions](https://github.com/apache/zookeeper/blob/release-3.5.9/zookeeper-docs/src/main/resources/markdown/recipes.html)。
 
 ######Note
 
 >Sometimes developers mistakenly assume one other guarantee that
-ZooKeeper does _not_ in fact make. This is:
+ZooKeeper does _not_ in fact make. This is:  
+>有时开发人员会错误地假设ZooKeeper实际上没有提供另一种保证。这是：
 > * Simultaneously Consistent Cross-Client Views* :
     ZooKeeper does not guarantee that at every instance in
     time, two different clients will have identical views of
@@ -1134,7 +1139,13 @@ ZooKeeper does _not_ in fact make. This is:
     synchronously across all servers, but ZooKeeper
     primitives can be used to construct higher level functions that
     provide useful client synchronization. (For more information,
-    see the [ZooKeeper Recipes](recipes.html).
+    see the [ZooKeeper Recipes](recipes.html).  
+> *同时一致的跨客户视图* : ZooKeeper不能保证在每个实例上，两个不同的客户机都有相同的ZooKeeper数据视图。
+> 由于网络延迟等因素，一个客户端可能会在另一个客户端收到更改通知之前执行更新。考虑两个客户机A和B的场景。
+> 如果客户机A将znode /a 的值从0设置为1，然后告诉客户机B读取/a，则客户机B可能会读取0的旧值，
+> 具体取决于它连接到的服务器。如果客户端A和客户端B读取相同的值很重要，那么客户端B应该在执行读取之前
+> 从ZooKeeper API方法调用 **sync()** 方法。因此，ZooKeeper本身并不能保证在所有服务器上同步发生更改，
+> 但是ZooKeeper原语可以用来构造提供有用的客户端同步的更高级别的函数。
 
 <a name="ch_bindings"></a>
 
@@ -1142,6 +1153,7 @@ ZooKeeper does _not_ in fact make. This is:
 
 The ZooKeeper client libraries come in two languages: Java and C.
 The following sections describe these.
+> ZooKeeper客户端库有两种语言：Java和C。以下各节介绍这些。
 
 <a name="Java+Binding"></a>
 
@@ -1152,6 +1164,8 @@ There are two packages that make up the ZooKeeper Java binding:
 packages that make up ZooKeeper are used internally or are part of the
 server implementation. The **org.apache.zookeeper.data** package is made up of
 generated classes that are used simply as containers.
+> ZooKeeper Java绑定有两个包：**org.apache.zookeeper** 和 **org.apache.zookeeper.data**。
+> 组成ZooKeeper的其余包在内部使用，或者是服务器实现的一部分。 **org.apache.zookeeper.data**包由生成的类组成，这些类仅用作容器。
 
 The main class used by a ZooKeeper Java client is the **ZooKeeper** class. Its two constructors differ only
 by an optional session id and password. ZooKeeper supports session
