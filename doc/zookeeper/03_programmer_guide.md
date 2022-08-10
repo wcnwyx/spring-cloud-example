@@ -309,7 +309,7 @@ following fields:
 * **ctime**
   The time in milliseconds from epoch when this znode was
   created.
-  > 节点被创建爱你的事件（毫秒单位）
+  > 从创建此znode的纪元开始的时间（毫秒单位）
 * **mtime**
   The time in milliseconds from epoch when this znode was last
   modified.

@@ -8,7 +8,7 @@ SSL:Secure Socket Layer
 TSL:Transport Layer Security
 
 ##二：SSL握手
-HTTPS加密都是根据握手协议产生的一个回话秘钥（对称）来加密报文的。  
+HTTPS加密都是根据握手协议产生的一个会话秘钥（对称）来加密报文的。  
 握手主要完成以下工作：
 - 协商加密算法、鉴别方法、压缩方法
 - 两端相互鉴别对方身份

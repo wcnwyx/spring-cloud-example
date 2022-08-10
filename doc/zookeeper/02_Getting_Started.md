@@ -17,13 +17,13 @@ Administrator's Guide](zookeeperAdmin.html).
 > 本文档包含帮助您快速使用ZooKeeper的信息。它主要针对希望试用它的开发人员，包含单个
 >ZooKeeper服务器的简单安装说明、一些验证它是否正在运行的命令，以及一个简单的编程示例。
 >最后，为了方便起见，这里有几个小节介绍更复杂的安装，例如运行复制部署和优化事务日志。
->不过，有关商业部署的完整说明，请参阅[ZooKeeper Administrator's Guide](https://github.com/apache/zookeeper/blob/branch-3.5.9/zookeeper-docs/src/main/resources/markdown/zookeeperAdmin.html)。
+>不过，有关商业部署的完整说明，请参阅 [ZooKeeper Administrator's Guide](https://github.com/apache/zookeeper/blob/branch-3.5.9/zookeeper-docs/src/main/resources/markdown/zookeeperAdmin.html)。
 
 ### Pre-requisites
 > 预备条件
 
 See [System Requirements](zookeeperAdmin.html#sc_systemReq) in the Admin guide.
-> 请参阅管理指南中的[系统要求](https://zookeeper.apache.org/doc/r3.5.9/zookeeperAdmin.html#sc_systemReq)。
+> 请参阅管理指南中的 [系统要求](https://zookeeper.apache.org/doc/r3.5.9/zookeeperAdmin.html#sc_systemReq)。
 
 
 ### Download
@@ -46,7 +46,7 @@ so installation consists of creating a configuration.
 
 Once you've downloaded a stable ZooKeeper release unpack
 it and cd to the root
-> 一旦你下载了一个稳定的ZooKeeper版本，把它解包，然后把cd到根目录下
+> 一旦你下载了一个稳定的ZooKeeper版本，把它解包，然后cd到根目录下
 
 To start ZooKeeper you need a configuration file. Here is a sample,
 create it in **conf/zoo.cfg**:
